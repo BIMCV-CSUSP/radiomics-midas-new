@@ -74,7 +74,14 @@ def run(row):
         result.name = case["ID"]
         result = result.add_prefix("label{}_".format(index))
         patient.append(result)
-    patient = pd.concat(patient, axis=0)
+    if len(patient) == 0:
+        logger.error(f"FEATURE EXTRACTION FAILED: {case['ID']}")
+        patient = pd.Series()
+        patient.name = case["ID"]
+    elif len(patient) == 1:
+        patient = patient[0]
+    else:
+        patient = pd.concat(patient, axis=0)
     return patient
 
 
