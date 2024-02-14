@@ -10,6 +10,7 @@ from __future__ import print_function
 
 import logging
 import threading
+import time
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
@@ -23,7 +24,9 @@ from radiomics import featureextractor, imageoperations
 
 def checkMaskVol(image, mask, label):
     try:
-        imageoperations.checkMask(image, mask, minimumROIDimensions=3, minimumROISize=1000, label=label)
+        imageoperations.checkMask(
+            image, mask, minimumROIDimensions=3, minimumROISize=1000, label=label
+        )
         result = label
     except Exception as e:
         result = None
@@ -31,6 +34,8 @@ def checkMaskVol(image, mask, label):
 
 
 def run(row):
+    start_time = time.time()
+
     _, case = row
     logger = rLogger.getChild(case["ID"])
     threading.current_thread().name = case["ID"]
@@ -45,7 +50,12 @@ def run(row):
         settings["enableCExtensions"] = True
         extractor = featureextractor.RadiomicsFeatureExtractor(**settings)
 
-    logger.info("Processing Patient %s (Image: %s, Mask: %s)", case["ID"], case["Image"], case["Mask"])
+    logger.info(
+        "Processing Patient %s (Image: %s, Mask: %s)",
+        case["ID"],
+        case["Image"],
+        case["Mask"],
+    )
 
     image_path = case["Image"]
     mask_path = case["Mask"]
@@ -60,7 +70,13 @@ def run(row):
     patient = []
     for index, label in enumerate(valid_labels[:5], start=1):
         label = int(label)
-        logger.info("Processing Patient %s (Image: %s, Mask: %s, Label: %s)", case["ID"], case["Image"], case["Mask"], label)
+        logger.info(
+            "Processing Patient %s (Image: %s, Mask: %s, Label: %s)",
+            case["ID"],
+            case["Image"],
+            case["Mask"],
+            label,
+        )
         if (image_path is not None) and (mask_path is not None):
             try:
                 result = pd.Series(extractor.execute(image_path, mask_path, label))
@@ -82,7 +98,10 @@ def run(row):
         patient = patient[0]
     else:
         patient = pd.concat(patient, axis=0)
-    return patient
+
+    execution_time = time.time() - start_time
+
+    return patient, execution_time
 
 
 def main():
@@ -105,9 +124,14 @@ def main():
     logger.info("Patients: %d", df.shape[0])
 
     pool = Pool(processes=(cpu_count() - 1))
-    l_results = pool.map(run, df.iterrows())
+    pool_results = pool.map(run, df.iterrows())
+    l_results = [result[0] for result in pool_results]
+    l_times = [result[1] for result in pool_results]
     pool.close()
     pool.join()
+    print(
+        f"Average execution time: {np.mean(l_times):.2f} +/- {np.std(l_times):.2f} seconds"
+    )
     # Merge results in one df
     results = pd.DataFrame()
     for result in l_results:
@@ -126,8 +150,8 @@ if __name__ == "__main__":
     sitk.ProcessObject_SetGlobalDefaultNumberOfThreads(1)
 
     homedir = Path(__file__).parents[1]
-    inputCSV = homedir.joinpath("data", "filtered_midas900.csv")
-    outputFilepath = homedir.joinpath("data", "filtered_midas900_radiomics.csv")
+    inputCSV = homedir.joinpath("data", "filtered_midas900_t2w.csv")
+    outputFilepath = homedir.joinpath("data", "filtered_midas900t2W_radiomics.csv")
     progress_filename = homedir.joinpath("src", "log", f"{datetime.now()}.log")
     params = homedir.joinpath("src", "Params.yaml")
 
@@ -135,7 +159,9 @@ if __name__ == "__main__":
     rLogger = radiomics.logger
     # Create handler for writing to log file
     handler = logging.FileHandler(filename=progress_filename, mode="a")
-    handler.setFormatter(logging.Formatter("%(levelname)s: (%(threadName)s) %(name)s: %(message)s"))
+    handler.setFormatter(
+        logging.Formatter("%(levelname)s: (%(threadName)s) %(name)s: %(message)s")
+    )
     rLogger.addHandler(handler)
 
     main()
