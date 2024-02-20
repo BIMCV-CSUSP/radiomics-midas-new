@@ -3,7 +3,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import (
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+)
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.metrics import (
     accuracy_score,
@@ -12,6 +16,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
+from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import StratifiedKFold, cross_validate
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -319,18 +324,53 @@ if __name__ == "__main__":
     root_dir = Path(__file__).resolve().parents[1]
 
     experiments = {
-        "5 levels/L5-S": {"classifier": GradientBoostingClassifier, "disc": 1},
-        "5 levels/L4-L5": {"classifier": RandomForestClassifier, "disc": 2},
-        "5 levels/L3-L4": {"classifier": GradientBoostingClassifier, "disc": 3},
-        "5 levels/L2-L3": {"classifier": RandomForestClassifier, "disc": 4},
-        "5 levels/L1-L2": {"classifier": RandomForestClassifier, "disc": 5},
-        "5 levels/ALL": {"classifier": GradientBoostingClassifier},
-        "4 levels/L5-S": {"classifier": GradientBoostingClassifier, "disc": 1},
-        "4 levels/L4-L5": {"classifier": RandomForestClassifier, "disc": 2},
-        "4 levels/L3-L4": {"classifier": RandomForestClassifier, "disc": 3},
-        "4 levels/L2-L3": {"classifier": RandomForestClassifier, "disc": 4},
-        "4 levels/L1-L2": {"classifier": RandomForestClassifier, "disc": 5},
-        "4 levels/ALL": {"classifier": GradientBoostingClassifier},
+        "5 levels/L5-S": {
+            "classifier": GradientBoostingClassifier(
+                n_estimators=200, max_features="log2", max_depth=2, learning_rate=0.1
+            ),
+            "disc": 1,
+        },
+        "5 levels/L4-L5": {
+            "classifier": RandomForestClassifier(
+                n_estimators=50, max_features="sqrt", max_depth=6, criterion="entropy"
+            ),
+            "disc": 2,
+        },
+        "5 levels/L3-L4": {
+            "classifier": ExtraTreesClassifier(),
+            "disc": 3,
+        },
+        "5 levels/L2-L3": {
+            "classifier": RandomForestClassifier(
+                max_features="log2", max_depth=7, criterion="entropy"
+            ),
+            "disc": 4,
+        },
+        "5 levels/L1-L2": {
+            "classifier": RandomForestClassifier(
+                max_features="sqrt", max_depth=7, criterion="gini"
+            ),
+            "disc": 5,
+        },
+        "5 levels/ALL": {"classifier": ExtraTreesClassifier()},
+        "4 levels/L5-S": {
+            "classifier": GradientBoostingClassifier(
+                subsample=0.8,
+                n_estimators=200,
+                max_features="sqrt",
+                max_depth=4,
+                learning_rate=0.1,
+            ),
+            "disc": 1,
+        },
+        "4 levels/L4-L5": {
+            "classifier": RandomForestClassifier(max_depth=7),
+            "disc": 2,
+        },
+        "4 levels/L3-L4": {"classifier": ExtraTreesClassifier(), "disc": 3},
+        "4 levels/L2-L3": {"classifier": MLPClassifier(), "disc": 4},
+        "4 levels/L1-L2": {"classifier": RandomForestClassifier(), "disc": 5},
+        "4 levels/ALL": {"classifier": RandomForestClassifier()},
     }
 
     results = []
@@ -338,16 +378,18 @@ if __name__ == "__main__":
     for key, config in experiments.items():
         if "ALL" not in key:
             labels, features = get_labels_and_features(
-                rater="JDCarlos", label=config["disc"], from_image="t1w_t2w"
+                rater="JDCarlos", label=config["disc"], from_image="t2w"
             )
         else:
             labels, features = get_labels_and_features_all_discs(
-                rater="JDCarlos", from_image="t1w_t2w"
+                rater="JDCarlos", from_image="t2w"
             )
-        classifier = config["classifier"]()
+        if "4" in key:
+            labels.loc[labels == 1] = 2
+        classifier = config["classifier"]
         result = cv(key, classifier, features, labels)
         print(result)
         results.append(result)
 
     results_df = pd.DataFrame(results)
-    results_df.to_csv(root_dir.joinpath("data", "results", "cv_results.csv"))
+    results_df.to_csv(root_dir.joinpath("data", "results", "cv_results_t2w.csv"))

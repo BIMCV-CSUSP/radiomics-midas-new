@@ -3,9 +3,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import (
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+)
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -267,9 +272,10 @@ def random_search_cv(experiment, clf, search_grid, features, labels):
         search_grid,
         cv=skf,
         scoring="f1_weighted",
-        n_iter=50,
+        n_iter=100,
         n_jobs=-1,
         random_state=0,
+        verbose=1,
     )
     search_results = rs_clf.fit(features, labels)
 
@@ -308,6 +314,22 @@ if __name__ == "__main__":
         "classifier__max_features": ["auto", "sqrt", "log2"],
     }
 
+    extra_trees_distribution = {
+        "classifier__n_estimators": [50, 100, 200],
+        "classifier__max_depth": [None, 10, 20],
+        "classifier__min_samples_split": [2, 5],
+        "classifier__min_samples_leaf": [1, 2],
+        "classifier__max_features": ["sqrt", "log2"],
+    }
+
+    mlp_distribution = {
+        "classifier__hidden_layer_sizes": [(50,), (100,), (200,)],
+        "classifier__activation": ["relu", "tanh"],
+        "classifier__solver": ["lbfgs", "adam"],
+        "classifier__alpha": [0.0001, 0.001],
+        "classifier__learning_rate": ["constant", "invscaling", "adaptive"],
+    }
+
     experiments = {
         "5 levels/L5-S": {
             "classifier": GradientBoostingClassifier,
@@ -320,8 +342,8 @@ if __name__ == "__main__":
             "disc": 2,
         },
         "5 levels/L3-L4": {
-            "classifier": GradientBoostingClassifier,
-            "distribution": gradient_boosting_distribution,
+            "classifier": ExtraTreesClassifier,
+            "distribution": extra_trees_distribution,
             "disc": 3,
         },
         "5 levels/L2-L3": {
@@ -330,13 +352,13 @@ if __name__ == "__main__":
             "disc": 4,
         },
         "5 levels/L1-L2": {
-            "classifier": GradientBoostingClassifier,
-            "distribution": gradient_boosting_distribution,
+            "classifier": RandomForestClassifier,
+            "distribution": random_forest_distribution,
             "disc": 5,
         },
         "5 levels/ALL": {
-            "classifier": GradientBoostingClassifier,
-            "distribution": gradient_boosting_distribution,
+            "classifier": ExtraTreesClassifier,
+            "distribution": extra_trees_distribution,
         },
         "4 levels/L5-S": {
             "classifier": GradientBoostingClassifier,
@@ -349,13 +371,13 @@ if __name__ == "__main__":
             "disc": 2,
         },
         "4 levels/L3-L4": {
-            "classifier": GradientBoostingClassifier,
-            "distribution": gradient_boosting_distribution,
+            "classifier": ExtraTreesClassifier,
+            "distribution": extra_trees_distribution,
             "disc": 3,
         },
         "4 levels/L2-L3": {
-            "classifier": GradientBoostingClassifier,
-            "distribution": gradient_boosting_distribution,
+            "classifier": MLPClassifier,
+            "distribution": mlp_distribution,
             "disc": 4,
         },
         "4 levels/L1-L2": {
@@ -364,8 +386,8 @@ if __name__ == "__main__":
             "disc": 5,
         },
         "4 levels/ALL": {
-            "classifier": GradientBoostingClassifier,
-            "distribution": gradient_boosting_distribution,
+            "classifier": RandomForestClassifier,
+            "distribution": random_forest_distribution,
         },
     }
 
@@ -374,12 +396,14 @@ if __name__ == "__main__":
     for key, config in experiments.items():
         if "ALL" not in key:
             labels, features = get_labels_and_features(
-                rater="JDCarlos", label=config["disc"], from_image="t1w_t2w"
+                rater="JDCarlos", label=config["disc"], from_image="t2w"
             )
         else:
             labels, features = get_labels_and_features_all_discs(
-                rater="JDCarlos", from_image="t1w_t2w"
+                rater="JDCarlos", from_image="t2w"
             )
+        if "4" in key:
+            labels.loc[labels == 1] = 2
         classifier = config["classifier"]()
         result = random_search_cv(
             key, classifier, config["distribution"], features, labels
@@ -388,4 +412,6 @@ if __name__ == "__main__":
         results.append(result)
 
     results_df = pd.DataFrame(results)
-    results_df.to_csv(root_dir.joinpath("data", "results", "random_search_results.csv"))
+    results_df.to_csv(
+        root_dir.joinpath("data", "results", "random_search_results_t2w.csv")
+    )

@@ -286,7 +286,13 @@ def test_multiple_models(experiment, features, labels):
             ]
         )
         scores = cross_val_score(
-            pipeline, features, labels, cv=skf, scoring="f1_weighted"
+            pipeline,
+            features,
+            labels,
+            cv=skf,
+            scoring="f1_weighted",
+            n_jobs=-1,
+            verbose=1,
         )
         f1_scores[name] = scores.mean()
 
@@ -328,15 +334,17 @@ if __name__ == "__main__":
     for key, config in experiments.items():
         if "ALL" not in key:
             labels, features = get_labels_and_features(
-                rater="JDCarlos", label=config["disc"], from_image="t1w_t2w"
+                rater="JDCarlos", label=config["disc"], from_image="t2w"
             )
         else:
             labels, features = get_labels_and_features_all_discs(
-                rater="JDCarlos", from_image="t1w_t2w"
+                rater="JDCarlos", from_image="t2w"
             )
+        if "4" in key:
+            labels.loc[labels == 1] = 2
         result = test_multiple_models(key, features, labels)
         print(result)
         results.append(result)
 
     results_df = pd.DataFrame(results)
-    results_df.to_csv(root_dir.joinpath("data", "results", "best_classifier.csv"))
+    results_df.to_csv(root_dir.joinpath("data", "results", "best_classifier_t2w.csv"))
