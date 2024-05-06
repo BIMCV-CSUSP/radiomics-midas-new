@@ -67,6 +67,12 @@ def run(row):
         result = checkMaskVol(image, mask, label)
         if result:
             valid_labels.append(result)
+
+    # Only features from center slice
+    center_slice = image.GetSize()[2] // 2
+    image = image[:, :, center_slice]
+    mask = mask[:, :, center_slice]
+
     patient = []
     for index, label in enumerate(valid_labels[:5], start=1):
         label = int(label)
@@ -79,7 +85,7 @@ def run(row):
         )
         if (image_path is not None) and (mask_path is not None):
             try:
-                result = pd.Series(extractor.execute(image_path, mask_path, label))
+                result = pd.Series(extractor.execute(image, mask, label))
             except Exception:
                 logger.error("FEATURE EXTRACTION FAILED:", exc_info=True)
                 result = pd.Series()
@@ -151,7 +157,9 @@ if __name__ == "__main__":
 
     homedir = Path(__file__).parents[1]
     inputCSV = homedir.joinpath("data", "filtered_midas900_t2w.csv")
-    outputFilepath = homedir.joinpath("data", "filtered_midas900t2W_radiomics.csv")
+    outputFilepath = homedir.joinpath(
+        "data", "filtered_midas900_t2w_radiomics_center_slice.csv"
+    )
     progress_filename = homedir.joinpath("src", "log", f"{datetime.now()}.log")
     params = homedir.joinpath("src", "Params.yaml")
 

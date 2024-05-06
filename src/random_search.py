@@ -177,7 +177,9 @@ def build_dataframe_from_csv(
     )
 
     radiomic_features = pd.read_csv(
-        root_dir.joinpath("data", f"filtered_midas900_{from_image}_radiomics.csv"),
+        root_dir.joinpath(
+            "data", f"filtered_midas900_{from_image}_radiomics_center_slice.csv"
+        ),
         sep=",",
     )
     radiomic_features.rename(columns={"Unnamed: 0": "ID"}, inplace=True)
@@ -413,5 +415,7 @@ if __name__ == "__main__":
 
     results_df = pd.DataFrame(results)
     results_df.to_csv(
-        root_dir.joinpath("data", "results", "random_search_results_t2w.csv")
+        root_dir.joinpath(
+            "data", "results", "random_search_results_t2w_center_slice.csv"
+        )
     )
