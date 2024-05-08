@@ -25,10 +25,11 @@ Intervertebral disc degeneration (IDD) is a common age-related condition charact
     - `radiomics-analysis` contains the whole machine learning pipeline, from EDA to results evaluation.
     - `cv-analysis` [UNDER DEVELOPMENT] refers to preliminary experiments on IDD classification using Computer Vision.
 3. Source (`src`): contains the final Python scripts.
-    - `calculate` executes the feature extraction process using the provided `Params.yaml` congfiguration file.
-    - `test_multiple_models` evaluates a suite of machine learning models for each experiment.
-    - `random_search` evaluates different parameter combinations for the best model for each experiment.
-    - `compute_metrics` evaluates the best performing model for each experiment using cross-validation.
+    - `radiomics/calculate` executes the feature extraction process using the provided `Params.yaml` congfiguration file.
+    - `ml/test_multiple_models` evaluates a suite of machine learning models for each experiment.
+    - `ml/random_search` evaluates different parameter combinations for the best model for each experiment.
+    - `ml/compute_metrics` evaluates the best performing model for each experiment using cross-validation.
+    - `ml/transforms` and `ml/utils` contain helper functions for data import and preprocessing.
 
 ## Publication
 
