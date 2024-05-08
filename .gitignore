@@ -1,6 +1,4 @@
 .ipynb_checkpoints
 
 data
-logs
-src/config.json
-src/log
+log

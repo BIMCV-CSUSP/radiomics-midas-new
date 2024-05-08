@@ -159,9 +159,7 @@ def main():
     l_times = [result[1] for result in pool_results]
     pool.close()
     pool.join()
-    print(
-        f"Average execution time: {np.mean(l_times):.2f} +/- {np.std(l_times):.2f} seconds"
-    )
+
     # Merge results in one df
     results = pd.DataFrame()
     for result in l_results:
@@ -170,30 +168,62 @@ def main():
     # Creating an only-features CSV makes R loading easier
     results = results.T
     logger.info("Extraction complete, writing CSVs")
-
     results.to_csv(outputFilepath, na_rep="NaN")
     logger.info("Features CSV writing complete")
+    logger.info(
+        f"Average execution time: {np.mean(l_times):.2f} +/- {np.std(l_times):.2f} seconds"
+    )
 
 
 if __name__ == "__main__":
+
+    import argparse
+
     threading.current_thread().name = "Main"
     sitk.ProcessObject_SetGlobalDefaultNumberOfThreads(1)
+    homedir = Path(__file__)
 
-    homedir = Path(__file__).parents[1]
-    inputCSV = homedir.joinpath("data", "filtered_midas900_t2w.csv")
-    outputFilepath = homedir.joinpath(
-        "data", "mask_perturbation", "filtered_midas900_t2w_radiomics_dilated.csv"
+    parser = argparse.ArgumentParser(
+        prog="Radiomics Feature Extractor for MIDAS",
+        description="This program takes a CSV with paths to MRI nifti files, and their corresponding segmentation masks,"
+        " and computes the radiomic features specified in the parameter file.",
     )
-    progress_filename = homedir.joinpath("src", "log", f"{datetime.now()}.log")
-    params = homedir.joinpath("src", "Params.yaml")
+    parser.add_argument(
+        "input_csv",
+        type=Path,
+        help="the path to the input CSV",
+    )
+    parser.add_argument(
+        "output_csv",
+        type=Path,
+        help="the path to the output CSV",
+    )
+    parser.add_argument(
+        "--param",
+        type=Path,
+        default=homedir / "Params.yaml",
+        help="the path to the pyradiomics parameter file (default: `src/Params.yaml`)",
+    )
+    parser.add_argument(
+        "--logfile",
+        type=Path,
+        default=None,
+        help="the path to the log file (default: None, log to console)",
+    )
+    args = parser.parse_args()
+
+    inputCSV = args.input_csv
+    outputFilepath = args.output_csv
+    params = args.param
 
     # Configure logging
     rLogger = radiomics.logger
-    # Create handler for writing to log file
-    handler = logging.FileHandler(filename=progress_filename, mode="a")
-    handler.setFormatter(
-        logging.Formatter("%(levelname)s: (%(threadName)s) %(name)s: %(message)s")
-    )
-    rLogger.addHandler(handler)
+    if progress_filename := args.logfile:
+        # Create handler for writing to log file
+        handler = logging.FileHandler(filename=progress_filename, mode="a")
+        handler.setFormatter(
+            logging.Formatter("%(levelname)s: (%(threadName)s) %(name)s: %(message)s")
+        )
+        rLogger.addHandler(handler)
 
     main()
