@@ -22,6 +22,14 @@ import SimpleITK as sitk
 from radiomics import featureextractor, imageoperations
 
 
+# Perturbation
+SHIFT_MASK = False
+EROSION = False
+DILATION = True
+# Source Image
+CENTER_SLICE = False
+
+
 def checkMaskVol(image, mask, label):
     try:
         imageoperations.checkMask(
@@ -68,10 +76,26 @@ def run(row):
         if result:
             valid_labels.append(result)
 
-    # Only features from center slice
-    center_slice = image.GetSize()[2] // 2
-    image = image[:, :, center_slice]
-    mask = mask[:, :, center_slice]
+    if CENTER_SLICE:
+        center_slice = image.GetSize()[2] // 2
+        image = image[:, :, center_slice]
+        mask = mask[:, :, center_slice]
+
+    if SHIFT_MASK:
+        max_shift_x = 3
+        max_shift_y = 5
+        dx = np.random.randint(-max_shift_x, max_shift_x + 1)
+        dy = np.random.randint(-max_shift_y, max_shift_y + 1)
+        translation = sitk.TranslationTransform(3, [dx, dy, 0])
+        mask = sitk.Resample(mask, translation)
+
+    if EROSION:
+        for i in np.array(valid_labels[:5]).astype(np.double):
+            mask = sitk.BinaryErode(mask, foregroundValue=i)
+
+    if DILATION:
+        for i in np.array(valid_labels[:5]).astype(np.double):
+            mask = sitk.BinaryDilate(mask, foregroundValue=i)
 
     patient = []
     for index, label in enumerate(valid_labels[:5], start=1):
@@ -158,7 +182,7 @@ if __name__ == "__main__":
     homedir = Path(__file__).parents[1]
     inputCSV = homedir.joinpath("data", "filtered_midas900_t2w.csv")
     outputFilepath = homedir.joinpath(
-        "data", "filtered_midas900_t2w_radiomics_center_slice.csv"
+        "data", "mask_perturbation", "filtered_midas900_t2w_radiomics_dilated.csv"
     )
     progress_filename = homedir.joinpath("src", "log", f"{datetime.now()}.log")
     params = homedir.joinpath("src", "Params.yaml")
