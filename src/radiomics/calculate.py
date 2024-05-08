@@ -17,10 +17,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import radiomics
 import SimpleITK as sitk
-from radiomics import featureextractor, imageoperations
 
+import radiomics
+from radiomics import featureextractor, imageoperations
 
 # Perturbation
 SHIFT_MASK = False
@@ -176,7 +176,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     import argparse
 
     threading.current_thread().name = "Main"
