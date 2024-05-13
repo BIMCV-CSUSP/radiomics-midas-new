@@ -28,6 +28,7 @@ EROSION = False
 DILATION = True
 # Source Image
 CENTER_SLICE = False
+REORIENT = True
 
 
 def checkMaskVol(image, mask, label):
@@ -75,6 +76,12 @@ def run(row):
         result = checkMaskVol(image, mask, label)
         if result:
             valid_labels.append(result)
+
+    if REORIENT:
+        orient = sitk.DICOMOrientImageFilter()
+        orient.SetDesiredCoordinateOrientation("LPI")  # Left Posterior Inferior
+        image = orient.Execute(image)
+        mask = orient.Execute(mask)
 
     if CENTER_SLICE:
         center_slice = image.GetSize()[2] // 2
