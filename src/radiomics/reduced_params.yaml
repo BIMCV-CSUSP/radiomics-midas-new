@@ -1,0 +1,17 @@
+setting:
+  normalize: true 
+  normalizeScale: 100
+  interpolator: 'sitkBSpline'
+  binCount: 100
+
+imageType:
+  Original: {}
+
+featureClass:
+  firstorder:
+  shape2D:
+    - MinorAxisLength
+    - PerimeterSurfaceRatio
+    - Sphericity
+  glcm:
+
