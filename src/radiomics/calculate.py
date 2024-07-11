@@ -208,7 +208,7 @@ if __name__ == "__main__":
         "--param",
         type=Path,
         default=homedir / "Params.yaml",
-        help="the path to the pyradiomics parameter file (default: `src/Params.yaml`)",
+        help="the path to the pyradiomics parameter file (default: `src/radiomics/Params.yaml`)",
     )
     parser.add_argument(
         "--logfile",
