@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import PCA
 from sklearn.ensemble import (
     AdaBoostClassifier,
     ExtraTreesClassifier,
@@ -9,25 +10,60 @@ from sklearn.ensemble import (
     RandomForestClassifier,
 )
 from sklearn.linear_model import LogisticRegression, SGDClassifier
-from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.svm import SVC
-from transforms import CorrelationFeatureReduction, VarianceFeatureReduction
-from utils import get_labels_and_features, get_labels_and_features_all_discs
+from transforms import (
+    CorrelationFeatureReduction,
+    mRMRFeatureReduction,
+    VarianceFeatureReduction,
+)
+
+MRMR_FEATURES_OPTIONS = [5, 10, 20]
+PCA_VARIANCE_OPTIONS = [0.95, 0.99]
+BASE_PARAM_GRID = [
+    {},
+    {
+        "reduce_dim": [CorrelationFeatureReduction()],
+    },
+    {
+        "reduce_dim": [mRMRFeatureReduction()],
+        "reduce_dim__K": MRMR_FEATURES_OPTIONS,
+    },
+    {
+        "reduce_dim": [PCA(random_state=0)],
+        "reduce_dim__n_components": PCA_VARIANCE_OPTIONS,
+    },
+    {
+        "reduce_dim": [VarianceFeatureReduction()],
+    },
+    {
+        "reduce_dim": [
+            make_pipeline(VarianceFeatureReduction(), CorrelationFeatureReduction())
+        ],
+    },
+    {
+        "reduce_dim": [
+            make_pipeline(VarianceFeatureReduction(), mRMRFeatureReduction())
+        ],
+        "reduce_dim__mrmrfeaturereduction__K": MRMR_FEATURES_OPTIONS,
+    },
+    {
+        "reduce_dim": [make_pipeline(VarianceFeatureReduction(), PCA(random_state=0))],
+        "reduce_dim__pca__n_components": PCA_VARIANCE_OPTIONS,
+    },
+]
 
 
 def test_multiple_models(experiment, features, labels):
-    # Create a stratified 5-fold cross-validation object
-    skf = StratifiedKFold(n_splits=5)
-
     classifiers = {
         "Random Forest": RandomForestClassifier(),
         "Gradient Boosting": GradientBoostingClassifier(),
-        "SVM": SVC(),
+        "LinearSVM": SVC(kernel="linear"),
+        "RadialSVM": SVC(kernel="rbf"),
         "Logistic Regression": LogisticRegression(),
         "Stochastic Gradient Descent": SGDClassifier(),
         "Naive Bayes": GaussianNB(),
@@ -36,38 +72,47 @@ def test_multiple_models(experiment, features, labels):
         "AdaBoost": AdaBoostClassifier(),
         "ExtraTrees": ExtraTreesClassifier(),
     }
-
-    f1_scores = {}
+    results = []
     for name, clf in classifiers.items():
         pipeline = Pipeline(
             [
-                ("variancethreshold", VarianceFeatureReduction(threshold=0.05)),
-                ("correlationreduction", CorrelationFeatureReduction()),
-                ("scaler", StandardScaler()),
+                ("reduce_dim", "passthrough"),
                 ("classifier", clf),
             ]
         )
-        scores = cross_val_score(
+        grid_search = GridSearchCV(
             pipeline,
-            features,
-            labels,
-            cv=skf,
+            BASE_PARAM_GRID,
+            cv=StratifiedKFold(n_splits=10),
             scoring="f1_weighted",
             n_jobs=-1,
-            verbose=1,
+            verbose=2,
         )
-        f1_scores[name] = scores.mean()
+        grid_results = grid_search.fit(features, labels)
+        clf_results = pd.DataFrame(data=grid_results.cv_results_)
+        clf_results["Image Type"] = "all"
 
-    # Select the classifier with the highest F1 score
-    best_classifier = max(f1_scores, key=f1_scores.get)  # type: ignore
+        for image_type in ("log", "wavelet", "original"):
+            X_train = features.loc[
+                :,
+                features.columns.str.contains(image_type)
+                & ~features.columns.str.contains("diagnostics"),
+            ].copy()
+            grid_results = grid_search.fit(X_train, labels)
 
-    results = pd.Series(
-        {
-            "Best classifier": best_classifier,
-            "F1": f1_scores[best_classifier],
-        }
-    )
-    results.name = experiment
+            results_aux = pd.DataFrame(data=grid_results.cv_results_)
+            results_aux["Image Type"] = image_type
+
+            clf_results = pd.concat([clf_results, results_aux])
+
+        clf_results["Model"] = name
+
+        results.append(clf_results)
+
+    results = pd.concat(results)
+
+    results["Experiment"] = experiment
+
     return results
 
 
@@ -80,11 +125,6 @@ if __name__ == "__main__":
         prog="Test models from scikit-learn",
         description="This program trains and evaluates several models from scikit-learn"
         "(with default parameters) on each task, and returns which performs best.",
-    )
-    parser.add_argument(
-        "img_relation",
-        type=Path,
-        help="the path to the image relation CSV",
     )
     parser.add_argument(
         "features",
@@ -102,7 +142,6 @@ if __name__ == "__main__":
         help="the path to the output CSV",
     )
     args = parser.parse_args()
-    img_relation_path = args.img_relation
     features_path = args.features
     labels_path = args.labels
     output = args.output
@@ -125,19 +164,15 @@ if __name__ == "__main__":
     results = []
 
     for key, config in experiments.items():
+        labels = pd.read_csv(labels_path, index_col="ID")
+        features = pd.read_csv(features_path, index_col="ID")
         if "ALL" not in key:
-            labels, features = get_labels_and_features(
-                img_relation_path, labels_path, features_path, label=config["disc"]
-            )
-        else:
-            labels, features = get_labels_and_features_all_discs(
-                img_relation_path, labels_path, features_path
-            )
+            labels = labels.loc[labels.index.str.endswith(str(config["disc"]))]
+            features = features.loc[features.index.str.endswith(str(config["disc"]))]
         if "4" in key:
-            labels.loc[labels == 1] = 2
+            labels[labels == 1] = 2
         result = test_multiple_models(key, features, labels)
-        print(result)
         results.append(result)
 
-    results_df = pd.DataFrame(results)
-    results_df.to_csv(output)
+    results_df = pd.concat(results)
+    results_df.to_csv(output, index=False)

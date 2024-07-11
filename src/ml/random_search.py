@@ -2,29 +2,26 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import PCA
 from sklearn.ensemble import (
-    ExtraTreesClassifier,
     GradientBoostingClassifier,
-    RandomForestClassifier,
 )
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from transforms import CorrelationFeatureReduction, VarianceFeatureReduction
-from utils import get_labels_and_features, get_labels_and_features_all_discs
+from sklearn.svm import SVC
+from transforms import mRMRFeatureReduction
 
 
 def random_search_cv(experiment, clf, search_grid, features, labels):
-    # Create a stratified 5-fold cross-validation object
-    skf = StratifiedKFold(n_splits=5)
+    # Create a stratified 10-fold cross-validation object
+    skf = StratifiedKFold(n_splits=10)
 
     # Perform cross-validation
     pipeline_clf = Pipeline(
         [
-            ("variancethreshold", VarianceFeatureReduction(threshold=0.05)),
-            ("correlationreduction", CorrelationFeatureReduction()),
-            ("scaler", StandardScaler()),
+            ("reduce_dim", "passthrough"),
             ("classifier", clf),
         ]
     )
@@ -37,7 +34,7 @@ def random_search_cv(experiment, clf, search_grid, features, labels):
         n_iter=100,
         n_jobs=-1,
         random_state=0,
-        verbose=1,
+        verbose=2,
     )
     search_results = rs_clf.fit(features, labels)
 
@@ -67,11 +64,6 @@ if __name__ == "__main__":
         "for the best models for each task (output of `test_multiple_models.py`)",
     )
     parser.add_argument(
-        "img_relation",
-        type=Path,
-        help="the path to the image relation CSV",
-    )
-    parser.add_argument(
         "features",
         type=Path,
         help="the path to the radiomics features CSV",
@@ -87,16 +79,13 @@ if __name__ == "__main__":
         help="the path to the output CSV",
     )
     args = parser.parse_args()
-    img_relation_path = args.img_relation
     features_path = args.features
     labels_path = args.labels
     output = args.output
 
-    random_forest_distribution = {
-        "classifier__n_estimators": [10, 50, 100, 200, 500],
-        "classifier__max_features": ["auto", "sqrt", "log2"],
-        "classifier__max_depth": [4, 5, 6, 7, 8],
-        "classifier__criterion": ["gini", "entropy"],
+    linear_svm_distribution = {
+        "classifier__C": [0.1, 1, 10, 100],
+        "classifier__gamma": ["scale", "auto"] + list(np.logspace(-3, 3, 7)),
     }
 
     gradient_boosting_distribution = {
@@ -107,97 +96,117 @@ if __name__ == "__main__":
         "classifier__max_features": ["auto", "sqrt", "log2"],
     }
 
-    extra_trees_distribution = {
-        "classifier__n_estimators": [50, 100, 200],
-        "classifier__max_depth": [None, 10, 20],
-        "classifier__min_samples_split": [2, 5],
-        "classifier__min_samples_leaf": [1, 2],
-        "classifier__max_features": ["sqrt", "log2"],
+    logistic_regression_distribution = {
+        "classifier__C": np.logspace(-3, 3, 7),
+        "classifier__penalty": ["l1", "l2", "elasticnet"],
+        "classifier__solver": ["newton-cg", "lbfgs", "liblinear", "sag", "saga"],
+        "classifier__max_iter": [100, 200, 300],
     }
 
     mlp_distribution = {
-        "classifier__hidden_layer_sizes": [(50,), (100,), (200,)],
+        "classifier__hidden_layer_sizes": [(50,), (100,), (50, 50), (100, 50)],
         "classifier__activation": ["relu", "tanh"],
-        "classifier__solver": ["lbfgs", "adam"],
-        "classifier__alpha": [0.0001, 0.001],
+        "classifier__solver": ["lbfgs", "adam", "sgd"],
+        "classifier__alpha": [0.0001, 0.001, 0.01],
         "classifier__learning_rate": ["constant", "invscaling", "adaptive"],
     }
 
     experiments = {
         "5 levels/L5-S": {
-            "classifier": GradientBoostingClassifier,
-            "distribution": gradient_boosting_distribution,
+            "classifier": LogisticRegression(),
+            "distribution": {
+                "reduce_dim": [PCA(n_components=0.95, random_state=0)],
+                **logistic_regression_distribution,
+            },
             "disc": 1,
         },
         "5 levels/L4-L5": {
-            "classifier": RandomForestClassifier,
-            "distribution": random_forest_distribution,
+            "classifier": GradientBoostingClassifier(),
+            "distribution": gradient_boosting_distribution,
             "disc": 2,
         },
         "5 levels/L3-L4": {
-            "classifier": ExtraTreesClassifier,
-            "distribution": extra_trees_distribution,
+            "classifier": MLPClassifier(),
+            "distribution": {
+                "reduce_dim": [mRMRFeatureReduction(K=20)],
+                **mlp_distribution,
+            },
             "disc": 3,
         },
         "5 levels/L2-L3": {
-            "classifier": RandomForestClassifier,
-            "distribution": random_forest_distribution,
+            "classifier": GradientBoostingClassifier(),
+            "distribution": {
+                "reduce_dim": [mRMRFeatureReduction(K=20)],
+                **gradient_boosting_distribution,
+            },
             "disc": 4,
         },
         "5 levels/L1-L2": {
-            "classifier": RandomForestClassifier,
-            "distribution": random_forest_distribution,
+            "classifier": MLPClassifier(),
+            "distribution": {
+                "reduce_dim": [mRMRFeatureReduction(K=20)],
+                **mlp_distribution,
+            },
             "disc": 5,
         },
         "5 levels/ALL": {
-            "classifier": ExtraTreesClassifier,
-            "distribution": extra_trees_distribution,
+            "classifier": LogisticRegression(),
+            "distribution": logistic_regression_distribution,
         },
         "4 levels/L5-S": {
-            "classifier": GradientBoostingClassifier,
-            "distribution": gradient_boosting_distribution,
+            "classifier": SVC(kernel="linear"),
+            "distribution": {
+                "reduce_dim": [PCA(n_components=0.95, random_state=0)],
+                **linear_svm_distribution,
+            },
             "disc": 1,
         },
         "4 levels/L4-L5": {
-            "classifier": RandomForestClassifier,
-            "distribution": random_forest_distribution,
+            "classifier": GradientBoostingClassifier(),
+            "distribution": gradient_boosting_distribution,
             "disc": 2,
         },
         "4 levels/L3-L4": {
-            "classifier": ExtraTreesClassifier,
-            "distribution": extra_trees_distribution,
+            "classifier": MLPClassifier(),
+            "distribution": {
+                "reduce_dim": [mRMRFeatureReduction(K=20)],
+                **mlp_distribution,
+            },
             "disc": 3,
         },
         "4 levels/L2-L3": {
-            "classifier": MLPClassifier,
-            "distribution": mlp_distribution,
+            "classifier": GradientBoostingClassifier(),
+            "distribution": {
+                "reduce_dim": [mRMRFeatureReduction(K=10)],
+                **gradient_boosting_distribution,
+            },
             "disc": 4,
         },
         "4 levels/L1-L2": {
-            "classifier": RandomForestClassifier,
-            "distribution": random_forest_distribution,
+            "classifier": MLPClassifier(),
+            "distribution": {
+                "reduce_dim": [PCA(n_components=0.99, random_state=0)],
+                **mlp_distribution,
+            },
             "disc": 5,
         },
         "4 levels/ALL": {
-            "classifier": RandomForestClassifier,
-            "distribution": random_forest_distribution,
+            "classifier": SVC(kernel="linear"),
+            "distribution": linear_svm_distribution,
         },
     }
 
     results = []
 
     for key, config in experiments.items():
+        labels = pd.read_csv(labels_path, index_col="ID")
+        features = pd.read_csv(features_path, index_col="ID")
         if "ALL" not in key:
-            labels, features = get_labels_and_features(
-                img_relation_path, labels_path, features_path, label=config["disc"]
-            )
-        else:
-            labels, features = get_labels_and_features_all_discs(
-                img_relation_path, labels_path, features_path
-            )
+            labels = labels.loc[labels.index.str.endswith(str(config["disc"]))]
+            features = features.loc[features.index.str.endswith(str(config["disc"]))]
         if "4" in key:
-            labels.loc[labels == 1] = 2
-        classifier = config["classifier"]()
+            labels[labels == 1] = 2
+        classifier = config["classifier"]
         result = random_search_cv(
             key, classifier, config["distribution"], features, labels
         )
