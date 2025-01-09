@@ -1,13 +1,19 @@
 # Towards Computer-Aided Assessment of Lumbar Disc Degeneration Based on Radiomics
 
 ## Authors
-Alejandro Mora-Rubio¹ [![ORCID favicon](https://orcid.figshare.com/ndownloader/files/8439032)](https://orcid.org/0000-0001-6012-8645), 
-Jesús Alejandro Alzate-Grizales¹ [![ORCID favicon](https://orcid.figshare.com/ndownloader/files/8439032)](https://orcid.org/0000-0003-1021-2050), 
-Joaquim Montell Serrano¹ [![ORCID favicon](https://orcid.figshare.com/ndownloader/files/8439032)](https://orcid.org/0000-0002-5597-7236), 
-Carlos Mayor-deJuan² [![ORCID favicon](https://orcid.figshare.com/ndownloader/files/8439032)](https://orcid.org/), 
-Rafael Llombart Blanco² [![ORCID favicon](https://orcid.figshare.com/ndownloader/files/8439032)](https://orcid.org/0000-0002-8790-0428), 
-Mariola Penadés Fons³ [![ORCID favicon](https://orcid.figshare.com/ndownloader/files/8439032)](https://orcid.org/0000-0002-7299-7802), and 
-Maria de la Iglesia-Vayá¹³ [![ORCID favicon](https://orcid.figshare.com/ndownloader/files/8439032)](https://orcid.org/0000-0003-4505-8399)
+Alejandro Mora-Rubio¹ [<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" 
+alt="ORCID logo" width="16" height="16" />](https://orcid.org/0000-0001-6012-8645), 
+Jesús Alejandro Alzate-Grizales¹ [<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" 
+alt="ORCID logo" width="16" height="16" />](https://orcid.org/0000-0003-1021-2050), 
+Joaquim Montell Serrano¹ [<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" 
+alt="ORCID logo" width="16" height="16" />](https://orcid.org/0000-0002-5597-7236), 
+Carlos Mayor-deJuan², 
+Rafael Llombart Blanco² [<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" 
+alt="ORCID logo" width="16" height="16" />](https://orcid.org/0000-0002-8790-0428), 
+Mariola Penadés Fons³ [<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" 
+alt="ORCID logo" width="16" height="16" />](https://orcid.org/0000-0002-7299-7802), and 
+Maria de la Iglesia-Vayá¹³ [<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" 
+alt="ORCID logo" width="16" height="16" />](https://orcid.org/0000-0003-4505-8399)
 
 ¹ Unidad Mixta de Imagen Biomédica FISABIO-CIPF, Fundación para el Fomento de la Investigación Sanitario y Biomédica de la Comunidad Valenciana, Valencia, Spain 
 
