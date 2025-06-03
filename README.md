@@ -25,18 +25,18 @@ alt="ORCID logo" width="16" height="16" />](https://orcid.org/0000-0003-4505-839
 Intervertebral disc degeneration (IDD) is a common age-related condition characterized by structural alterations and functional impairment of intervertebral discs, leading to various symptoms such as back and neck pain. The Pfirrmann grading system is commonly used for assessing IDD severity based on Magnetic Resonance Imaging (MRI) findings. However, this method is only qualitative, resulting in high inter-rater variability, and also time-consuming. In this study, we aimed to develop a machine learning model to automate Pfirrmann grade classification of IDD using quantitative radiomic features extracted from MRI scans. We retrospectively collected 717 MRI scans, which were manually labeled by an expert radiologist. The extracted features were utilized to train different classifiers, achieving for the 5 level grading task an average accuracy of 71\%, F1 score of 70\%, and without any disc being graded outside a $\pm1$ margin. Our findings demonstrate the potential of radiomics and machine learning to automate IDD assessment, reduce inter-rater variability, improve clinical efficiency, and support more accurate diagnoses and personalized treatment plans.
 
 ## About this repo
-1. `figures`: visual outputs or graphs related to the radiomics analysis.
-2. `notebooks`: contains Jupyter Notebooks, used during the experimentation phase.
-    - `pyradiomics` refers to the feature extraction process.
-    - `radiomics-analysis` contains the whole machine learning pipeline, from EDA to results evaluation.
-    - `cv-analysis` [UNDER DEVELOPMENT] refers to preliminary experiments on IDD classification using Computer Vision.
-3. Source (`src`): contains the final Python scripts.
-    - `radiomics/calculate` executes the feature extraction process using the provided `Params.yaml` congfiguration file.
-    - `ml/test_multiple_models` evaluates a suite of machine learning models for each experiment.
-    - `ml/random_search` evaluates different parameter combinations for the best model for each experiment.
-    - `ml/compute_metrics` evaluates the best performing model for each experiment using cross-validation.
-    - `ml/transforms` and `ml/utils` contain helper functions for data import and preprocessing.
+1. **figures/**: Visual outputs and plots from the radiomics analysis.
+  - `imageslabel1/`: Contains 20 subfolders (one per top feature), each with a violin plot (`violinplot.png`) showing the distribution of that feature across Pfirrmann classes.
 
+2. `**notebooks/**: contains Jupyter Notebooks, used during the experimentation phase.
+    -`EDA_image` : basic exploratory analysis of lumbar MRI images, including image size, spacing, and visualization of images and masks.
+    -`Image_Pre_processing`: basic MRI image pre-processing
+    -`extract_radiomics`: 1. Extraction and merging of radiomic features from lumbar MRI images using PyRadiomics.
+    2.Statistical analysis and machine learning modeling for Pfirrmann grade classification.
+    -`train_and_evaluate`: selection of relevant radiomic features and evaluation of multiple machine learning models for Pfirrmann grade classification.
+
+3. Source (`src`): contains the final Python scripts.
+    `Params.yaml` congfiguration file.
 ## Publication
 
 
