@@ -1,0 +1,76 @@
+=== Fine-tuning del modelo GradientBoosting ===
+
+Mejores parámetros (según roc_auc): OrderedDict([('gradientboostingclassifier__learning_rate', 0.1), ('gradientboostingclassifier__max_depth', 6), ('gradientboostingclassifier__max_features', None), ('gradientboostingclassifier__n_estimators', 740), ('gradientboostingclassifier__subsample', 0.5807164960325216)])
+
+=== Resultados CV (BayesSearch) ===
+  CV roc_auc: 0.957 +/- 0.012
+  CV f1: 0.836 +/- 0.048
+  CV balanced_accuracy: 0.884 +/- 0.042
+
+=== Evaluación en Test (NO calibrado) ===
+  Figura de Confusion Matrix: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/binary/best_results_4/confusion_matrix.png
+  AUC: 0.946
+  MCC: 0.764
+  Kappa: 0.764
+  F1: 0.833
+  Accuracy: 0.902
+  Sensitivity: 0.833
+  Specificity: 0.931
+  PPV: 0.833
+  NPV: 0.931
+  Balanced Accuracy: 0.882
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+           0       0.93      0.93      0.93       101
+           1       0.83      0.83      0.83        42
+
+    accuracy                           0.90       143
+   macro avg       0.88      0.88      0.88       143
+weighted avg       0.90      0.90      0.90       143
+
+
+=== Métricas de calibración ===
+  ECE  (pre):  0.101
+  ECE  (post): 0.065
+  Brier (pre): 0.099
+  Brier (post): 0.084
+
+=== Ajuste de Umbral (Resultados con el mejor threshold) ===
+Resultados para cada threshold:
+Threshold: 0.10 - F1: 0.743
+Threshold: 0.20 - F1: 0.800
+Threshold: 0.30 - F1: 0.826
+Threshold: 0.40 - F1: 0.818
+Threshold: 0.50 - F1: 0.833
+Threshold: 0.60 - F1: 0.769
+Threshold: 0.70 - F1: 0.694
+Threshold: 0.80 - F1: 0.594
+Threshold: 0.90 - F1: 0.240
+
+Mejor threshold seleccionado (según F1): 0.50
+
+Classification Report (con threshold 0.50):
+              precision    recall  f1-score   support
+
+           0       0.93      0.93      0.93       101
+           1       0.83      0.83      0.83        42
+
+    accuracy                           0.90       143
+   macro avg       0.88      0.88      0.88       143
+weighted avg       0.90      0.90      0.90       143
+
+AUC: 0.945
+MCC: 0.764
+Kappa: 0.764
+F1: 0.833
+Accuracy: 0.902
+Sensitivity: 0.833
+Specificity: 0.931
+PPV: 0.833
+NPV: 0.931
+Balanced Accuracy: 0.882
+
+Confusion Matrix (Calibrado con threshold=0.50) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/binary/best_results_4/calibration/confusion_matrix_best_threshold.png
+

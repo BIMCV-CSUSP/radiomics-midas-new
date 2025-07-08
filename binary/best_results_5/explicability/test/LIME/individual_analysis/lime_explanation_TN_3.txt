@@ -1,0 +1,17 @@
+=== LIME Explanation para TN (índice: 3) ===
+
+Clase real: 0
+Predicción del modelo: 0
+Probabilidades: [[0.96514739 0.03485261]]
+
+Importancia local de las features:
+  original_ngtdm_Contrast > 0.67: -0.0878
+  wavelet-HL_firstorder_10Percentile <= -0.47: -0.0711
+  wavelet2-HL_firstorder_10Percentile <= -0.47: -0.0646
+  squareroot_glcm_Idn <= -0.88: -0.0305
+  -0.72 < log-sigma-2-mm-3D_firstorder_10Percentile <= 0.01: -0.0271
+  squareroot_glcm_Idmn <= -0.84: -0.0235
+  0.35 < original_glcm_Correlation <= 0.70: -0.0216
+  0.43 < original_glcm_Imc2 <= 0.80: -0.0174
+  0.29 < squareroot_glcm_Correlation <= 0.75: -0.0167
+  -0.69 < squareroot_firstorder_Kurtosis <= -0.48: -0.0162

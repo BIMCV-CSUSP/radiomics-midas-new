@@ -1,0 +1,17 @@
+=== LIME Explanation para TP (índice: 3) ===
+
+Clase real: 1
+Predicción del modelo: 1
+Probabilidades: [[2.56478616e-10 1.00000000e+00]]
+
+Importancia local de las features:
+  log-sigma-2-mm-3D_glcm_Imc2 <= -0.55: 0.2782
+  original_ngtdm_Contrast <= -0.84: 0.2395
+  log-sigma-3-mm-3D_glszm_ZoneEntropy <= -0.63: 0.2225
+  original_firstorder_RobustMeanAbsoluteDeviation <= -0.82: 0.1093
+  squareroot_glcm_Imc1 > 0.82: 0.0889
+  squareroot_glcm_ClusterTendency <= -0.80: -0.0847
+  squareroot_glcm_Imc2 <= -0.81: 0.0696
+  squareroot_glszm_ZoneEntropy <= -0.66: -0.0658
+  squareroot_firstorder_Kurtosis > 0.42: 0.0637
+  logarithm_glcm_Correlation <= -0.89: -0.0627

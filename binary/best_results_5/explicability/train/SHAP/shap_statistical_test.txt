@@ -1,0 +1,108 @@
+=================================
+TEST DE MANN-WHITNEY U (SHAP por feature) con corrección 'Holm' para entrenamiento
+Comparación: Clase 0 vs Clase 1
+alpha = 0.05
+Features totales: 48
+=================================
+
+Resultados por feature (p-value crudo y corregido):
+    original_glcm_Imc2: p-value crudo=1.1115e-54, p-value corregido=5.3352e-53 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Imc2: p-value crudo=1.1420e-54, p-value corregido=5.3673e-53 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_ClusterTendency: p-value crudo=9.9250e-53, p-value corregido=4.3670e-51 => DIFERENCIA SIGNIFICATIVA
+    squareroot_firstorder_Kurtosis: p-value crudo=7.0043e-54, p-value corregido=3.2220e-52 => DIFERENCIA SIGNIFICATIVA
+    log-sigma-0-6-mm-3D_firstorder_10Percentile: p-value crudo=2.9915e-52, p-value corregido=1.2265e-50 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_Correlation: p-value crudo=2.9183e-53, p-value corregido=1.3133e-51 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Imc2: p-value crudo=1.2272e-52, p-value corregido=5.2768e-51 => DIFERENCIA SIGNIFICATIVA
+    exponential_firstorder_RobustMeanAbsoluteDeviation: p-value crudo=2.4955e-51, p-value corregido=9.2332e-50 => DIFERENCIA SIGNIFICATIVA
+    squareroot_firstorder_90Percentile: p-value crudo=8.8142e-52, p-value corregido=3.4376e-50 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_RobustMeanAbsoluteDeviation: p-value crudo=5.0102e-51, p-value corregido=1.8037e-49 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_SumEntropy: p-value crudo=7.8045e-51, p-value corregido=2.5755e-49 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_SumSquares: p-value crudo=5.8591e-51, p-value corregido=1.9921e-49 => DIFERENCIA SIGNIFICATIVA
+    original_ngtdm_Contrast: p-value crudo=9.1241e-51, p-value corregido=2.9197e-49 => DIFERENCIA SIGNIFICATIVA
+    logarithm_firstorder_90Percentile: p-value crudo=9.2091e-52, p-value corregido=3.4995e-50 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_InterquartileRange: p-value crudo=8.0387e-50, p-value corregido=1.9293e-48 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_MeanAbsoluteDeviation: p-value crudo=6.3734e-50, p-value corregido=1.6571e-48 => DIFERENCIA SIGNIFICATIVA
+    original_glrlm_RunEntropy: p-value crudo=4.8809e-50, p-value corregido=1.4154e-48 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Correlation: p-value crudo=2.5083e-52, p-value corregido=1.0535e-50 => DIFERENCIA SIGNIFICATIVA
+    exponential_firstorder_MeanAbsoluteDeviation: p-value crudo=5.8480e-50, p-value corregido=1.5957e-48 => DIFERENCIA SIGNIFICATIVA
+    exponential_firstorder_InterquartileRange: p-value crudo=1.8158e-49, p-value corregido=3.9947e-48 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Correlation: p-value crudo=5.2986e-52, p-value corregido=2.1194e-50 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_MCC: p-value crudo=5.6990e-50, p-value corregido=1.5957e-48 => DIFERENCIA SIGNIFICATIVA
+    logarithm_firstorder_Kurtosis: p-value crudo=2.2298e-49, p-value corregido=4.6825e-48 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_90Percentile: p-value crudo=2.9313e-49, p-value corregido=5.8626e-48 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Idmn: p-value crudo=5.7507e-49, p-value corregido=1.0351e-47 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_MCC: p-value crudo=1.0038e-50, p-value corregido=3.1117e-49 => DIFERENCIA SIGNIFICATIVA
+    logarithm_firstorder_RootMeanSquared: p-value crudo=7.2509e-50, p-value corregido=1.8127e-48 => DIFERENCIA SIGNIFICATIVA
+    logarithm_firstorder_Skewness: p-value crudo=8.8354e-50, p-value corregido=2.0321e-48 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Idn: p-value crudo=1.3570e-48, p-value corregido=2.3068e-47 => DIFERENCIA SIGNIFICATIVA
+    log-sigma-2-mm-3D_firstorder_10Percentile: p-value crudo=3.1927e-49, p-value corregido=6.0661e-48 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Imc1: p-value crudo=5.3247e-51, p-value corregido=1.8636e-49 => DIFERENCIA SIGNIFICATIVA
+    original_gldm_GrayLevelVariance: p-value crudo=5.3852e-48, p-value corregido=6.4623e-47 => DIFERENCIA SIGNIFICATIVA
+    original_gldm_DependenceEntropy: p-value crudo=6.2147e-48, p-value corregido=6.8361e-47 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_Variance: p-value crudo=7.9333e-48, p-value corregido=7.9333e-47 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Idmn: p-value crudo=1.3026e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    squareroot_ngtdm_Contrast: p-value crudo=1.1012e-47, p-value corregido=9.9107e-47 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Idn: p-value crudo=1.4528e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_JointEntropy: p-value crudo=1.4650e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_ClusterShade: p-value crudo=3.8105e-48, p-value corregido=4.9537e-47 => DIFERENCIA SIGNIFICATIVA
+    wavelet2-HL_firstorder_10Percentile: p-value crudo=2.2183e-48, p-value corregido=3.3274e-47 => DIFERENCIA SIGNIFICATIVA
+    squareroot_firstorder_RootMeanSquared: p-value crudo=1.7649e-48, p-value corregido=2.8238e-47 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_ClusterProminence: p-value crudo=1.4166e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Imc1: p-value crudo=2.2069e-50, p-value corregido=6.6208e-49 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_ClusterTendency: p-value crudo=7.2308e-47, p-value corregido=2.1692e-46 => DIFERENCIA SIGNIFICATIVA
+    squareroot_firstorder_RobustMeanAbsoluteDeviation: p-value crudo=1.3602e-46, p-value corregido=2.7205e-46 => DIFERENCIA SIGNIFICATIVA
+    wavelet-HL_firstorder_10Percentile: p-value crudo=1.3814e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_Entropy: p-value crudo=1.6878e-46, p-value corregido=2.7205e-46 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_Imc1: p-value crudo=2.3537e-48, p-value corregido=3.3274e-47 => DIFERENCIA SIGNIFICATIVA
+
+ Total comparaciones con diferencia significativa: 48. Comparaciones:
+    original_glcm_Imc2: p-value crudo=1.1115e-54, p-value corregido=5.3352e-53 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Imc2: p-value crudo=1.1420e-54, p-value corregido=5.3673e-53 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_ClusterTendency: p-value crudo=9.9250e-53, p-value corregido=4.3670e-51 => DIFERENCIA SIGNIFICATIVA
+    squareroot_firstorder_Kurtosis: p-value crudo=7.0043e-54, p-value corregido=3.2220e-52 => DIFERENCIA SIGNIFICATIVA
+    log-sigma-0-6-mm-3D_firstorder_10Percentile: p-value crudo=2.9915e-52, p-value corregido=1.2265e-50 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_Correlation: p-value crudo=2.9183e-53, p-value corregido=1.3133e-51 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Imc2: p-value crudo=1.2272e-52, p-value corregido=5.2768e-51 => DIFERENCIA SIGNIFICATIVA
+    exponential_firstorder_RobustMeanAbsoluteDeviation: p-value crudo=2.4955e-51, p-value corregido=9.2332e-50 => DIFERENCIA SIGNIFICATIVA
+    squareroot_firstorder_90Percentile: p-value crudo=8.8142e-52, p-value corregido=3.4376e-50 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_RobustMeanAbsoluteDeviation: p-value crudo=5.0102e-51, p-value corregido=1.8037e-49 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_SumEntropy: p-value crudo=7.8045e-51, p-value corregido=2.5755e-49 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_SumSquares: p-value crudo=5.8591e-51, p-value corregido=1.9921e-49 => DIFERENCIA SIGNIFICATIVA
+    original_ngtdm_Contrast: p-value crudo=9.1241e-51, p-value corregido=2.9197e-49 => DIFERENCIA SIGNIFICATIVA
+    logarithm_firstorder_90Percentile: p-value crudo=9.2091e-52, p-value corregido=3.4995e-50 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_InterquartileRange: p-value crudo=8.0387e-50, p-value corregido=1.9293e-48 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_MeanAbsoluteDeviation: p-value crudo=6.3734e-50, p-value corregido=1.6571e-48 => DIFERENCIA SIGNIFICATIVA
+    original_glrlm_RunEntropy: p-value crudo=4.8809e-50, p-value corregido=1.4154e-48 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Correlation: p-value crudo=2.5083e-52, p-value corregido=1.0535e-50 => DIFERENCIA SIGNIFICATIVA
+    exponential_firstorder_MeanAbsoluteDeviation: p-value crudo=5.8480e-50, p-value corregido=1.5957e-48 => DIFERENCIA SIGNIFICATIVA
+    exponential_firstorder_InterquartileRange: p-value crudo=1.8158e-49, p-value corregido=3.9947e-48 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Correlation: p-value crudo=5.2986e-52, p-value corregido=2.1194e-50 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_MCC: p-value crudo=5.6990e-50, p-value corregido=1.5957e-48 => DIFERENCIA SIGNIFICATIVA
+    logarithm_firstorder_Kurtosis: p-value crudo=2.2298e-49, p-value corregido=4.6825e-48 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_90Percentile: p-value crudo=2.9313e-49, p-value corregido=5.8626e-48 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Idmn: p-value crudo=5.7507e-49, p-value corregido=1.0351e-47 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_MCC: p-value crudo=1.0038e-50, p-value corregido=3.1117e-49 => DIFERENCIA SIGNIFICATIVA
+    logarithm_firstorder_RootMeanSquared: p-value crudo=7.2509e-50, p-value corregido=1.8127e-48 => DIFERENCIA SIGNIFICATIVA
+    logarithm_firstorder_Skewness: p-value crudo=8.8354e-50, p-value corregido=2.0321e-48 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Idn: p-value crudo=1.3570e-48, p-value corregido=2.3068e-47 => DIFERENCIA SIGNIFICATIVA
+    log-sigma-2-mm-3D_firstorder_10Percentile: p-value crudo=3.1927e-49, p-value corregido=6.0661e-48 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Imc1: p-value crudo=5.3247e-51, p-value corregido=1.8636e-49 => DIFERENCIA SIGNIFICATIVA
+    original_gldm_GrayLevelVariance: p-value crudo=5.3852e-48, p-value corregido=6.4623e-47 => DIFERENCIA SIGNIFICATIVA
+    original_gldm_DependenceEntropy: p-value crudo=6.2147e-48, p-value corregido=6.8361e-47 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_Variance: p-value crudo=7.9333e-48, p-value corregido=7.9333e-47 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Idmn: p-value crudo=1.3026e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    squareroot_ngtdm_Contrast: p-value crudo=1.1012e-47, p-value corregido=9.9107e-47 => DIFERENCIA SIGNIFICATIVA
+    logarithm_glcm_Idn: p-value crudo=1.4528e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_JointEntropy: p-value crudo=1.4650e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_ClusterShade: p-value crudo=3.8105e-48, p-value corregido=4.9537e-47 => DIFERENCIA SIGNIFICATIVA
+    wavelet2-HL_firstorder_10Percentile: p-value crudo=2.2183e-48, p-value corregido=3.3274e-47 => DIFERENCIA SIGNIFICATIVA
+    squareroot_firstorder_RootMeanSquared: p-value crudo=1.7649e-48, p-value corregido=2.8238e-47 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_ClusterProminence: p-value crudo=1.4166e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_Imc1: p-value crudo=2.2069e-50, p-value corregido=6.6208e-49 => DIFERENCIA SIGNIFICATIVA
+    squareroot_glcm_ClusterTendency: p-value crudo=7.2308e-47, p-value corregido=2.1692e-46 => DIFERENCIA SIGNIFICATIVA
+    squareroot_firstorder_RobustMeanAbsoluteDeviation: p-value crudo=1.3602e-46, p-value corregido=2.7205e-46 => DIFERENCIA SIGNIFICATIVA
+    wavelet-HL_firstorder_10Percentile: p-value crudo=1.3814e-47, p-value corregido=1.0421e-46 => DIFERENCIA SIGNIFICATIVA
+    original_firstorder_Entropy: p-value crudo=1.6878e-46, p-value corregido=2.7205e-46 => DIFERENCIA SIGNIFICATIVA
+    original_glcm_Imc1: p-value crudo=2.3537e-48, p-value corregido=3.3274e-47 => DIFERENCIA SIGNIFICATIVA
+
+

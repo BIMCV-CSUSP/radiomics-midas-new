@@ -1,0 +1,17 @@
+=== LIME Explanation para FP (índice: 5) ===
+
+Clase real: 0
+Predicción del modelo: 1
+Probabilidades: [[0.43591767 0.56408233]]
+
+Importancia local de las features:
+  wavelet2-LL_glcm_Imc2 > 1.00: 0.0074
+  original_ngtdm_Contrast > 0.66: -0.0071
+  log-sigma-3-mm-3D_firstorder_10Percentile <= -0.59: -0.0062
+  original_glrlm_RunEntropy > 0.87: -0.0060
+  log-sigma-2-mm-3D_glcm_Imc2 > 0.73: -0.0052
+  log-sigma-2-mm-3D_firstorder_10Percentile <= -0.65: -0.0051
+  squareroot_glcm_Correlation > 0.97: -0.0048
+  original_firstorder_RobustMeanAbsoluteDeviation > 0.57: -0.0045
+  original_glcm_Correlation > 0.91: -0.0041
+  original_glcm_Imc2 > 1.07: -0.0032

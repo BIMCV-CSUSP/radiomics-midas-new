@@ -1,0 +1,9 @@
+=== Fine-tuning del modelo GradientBoosting ===
+
+Mejores parámetros (según roc_auc): OrderedDict([('gradientboostingclassifier__learning_rate', 0.009427878090264678), ('gradientboostingclassifier__max_depth', 2), ('gradientboostingclassifier__max_features', 'sqrt'), ('gradientboostingclassifier__n_estimators', 707), ('gradientboostingclassifier__subsample', 0.5)])
+
+=== Resultados CV (BayesSearch) ===
+  CV roc_auc: 0.883 +/- 0.011
+  CV f1: 0.497 +/- 0.042
+  CV balanced_accuracy: 0.476 +/- 0.035
+

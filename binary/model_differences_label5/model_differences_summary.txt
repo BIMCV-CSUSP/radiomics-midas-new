@@ -1,0 +1,37 @@
+=================================
+TEST DE FRIEDMAN para métrica: val_auc
+Estadístico: 164.7338, p-value: 9.6913e-34
+alpha = 0.05
+=> HAY diferencias estadísticamente significativas entre los clasificadores (rechazamos H0).
+=================================
+
+Resultados comparaciones 2 a 2 (Wilcoxon + corrección múltiple):
+    Logistic Regression vs SVM: p-value corregido=3.2812e-03 => DIFERENCIA SIGNIFICATIVA
+    Logistic Regression vs Random Forest: p-value corregido=2.6067e-02 => DIFERENCIA SIGNIFICATIVA
+    Logistic Regression vs Gradient Boosting: p-value corregido=4.7077e-05 => DIFERENCIA SIGNIFICATIVA
+    Logistic Regression vs KNN: p-value corregido=1.0631e-08 => DIFERENCIA SIGNIFICATIVA
+    Logistic Regression vs Naive Bayes: p-value corregido=2.6645e-14 => DIFERENCIA SIGNIFICATIVA
+    SVM vs Random Forest: p-value corregido=1.0000e+00 => sin diferencia significativa
+    SVM vs Gradient Boosting: p-value corregido=1.0000e+00 => sin diferencia significativa
+    SVM vs KNN: p-value corregido=4.9116e-11 => DIFERENCIA SIGNIFICATIVA
+    SVM vs Naive Bayes: p-value corregido=4.2633e-14 => DIFERENCIA SIGNIFICATIVA
+    Random Forest vs Gradient Boosting: p-value corregido=5.2496e-01 => sin diferencia significativa
+    Random Forest vs KNN: p-value corregido=5.8620e-14 => DIFERENCIA SIGNIFICATIVA
+    Random Forest vs Naive Bayes: p-value corregido=2.6645e-14 => DIFERENCIA SIGNIFICATIVA
+    Gradient Boosting vs KNN: p-value corregido=3.0273e-08 => DIFERENCIA SIGNIFICATIVA
+    Gradient Boosting vs Naive Bayes: p-value corregido=2.6645e-14 => DIFERENCIA SIGNIFICATIVA
+    KNN vs Naive Bayes: p-value corregido=4.2379e-03 => DIFERENCIA SIGNIFICATIVA
+
+Comparaciones con diferencia significativa:
+    Logistic Regression vs SVM: p-value corregido=3.2812e-03 => DIFERENCIA SIGNIFICATIVA
+    Logistic Regression vs Random Forest: p-value corregido=2.6067e-02 => DIFERENCIA SIGNIFICATIVA
+    Logistic Regression vs Gradient Boosting: p-value corregido=4.7077e-05 => DIFERENCIA SIGNIFICATIVA
+    Logistic Regression vs KNN: p-value corregido=1.0631e-08 => DIFERENCIA SIGNIFICATIVA
+    Logistic Regression vs Naive Bayes: p-value corregido=2.6645e-14 => DIFERENCIA SIGNIFICATIVA
+    SVM vs KNN: p-value corregido=4.9116e-11 => DIFERENCIA SIGNIFICATIVA
+    SVM vs Naive Bayes: p-value corregido=4.2633e-14 => DIFERENCIA SIGNIFICATIVA
+    Random Forest vs KNN: p-value corregido=5.8620e-14 => DIFERENCIA SIGNIFICATIVA
+    Random Forest vs Naive Bayes: p-value corregido=2.6645e-14 => DIFERENCIA SIGNIFICATIVA
+    Gradient Boosting vs KNN: p-value corregido=3.0273e-08 => DIFERENCIA SIGNIFICATIVA
+    Gradient Boosting vs Naive Bayes: p-value corregido=2.6645e-14 => DIFERENCIA SIGNIFICATIVA
+    KNN vs Naive Bayes: p-value corregido=4.2379e-03 => DIFERENCIA SIGNIFICATIVA

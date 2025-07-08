@@ -1,0 +1,17 @@
+=== LIME Explanation para FN (índice: 16) ===
+
+Clase real: 1
+Predicción del modelo: 0
+Probabilidades: [[0.80544822 0.19455178]]
+
+Importancia local de las features:
+  -0.85 < original_ngtdm_Contrast <= -0.16: 0.0393
+  -0.70 < squareroot_firstorder_Kurtosis <= -0.44: -0.0378
+  0.17 < wavelet2-HL_firstorder_10Percentile <= 0.82: 0.0312
+  -0.89 < squareroot_glcm_ClusterTendency <= -0.27: -0.0279
+  0.11 < log-sigma-0-6-mm-3D_firstorder_10Percentile <= 0.82: 0.0268
+  0.30 < original_glcm_Correlation <= 0.76: -0.0245
+  -0.83 < squareroot_glcm_Idmn <= -0.15: -0.0237
+  -0.86 < original_firstorder_RobustMeanAbsoluteDeviation <= -0.10: 0.0221
+  0.35 < squareroot_glcm_Correlation <= 0.76: -0.0218
+  -0.87 < squareroot_firstorder_RobustMeanAbsoluteDeviation <= -0.37: -0.0201

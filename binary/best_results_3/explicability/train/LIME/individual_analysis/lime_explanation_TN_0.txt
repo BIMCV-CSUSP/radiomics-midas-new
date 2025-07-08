@@ -1,0 +1,17 @@
+=== LIME Explanation para TN (índice: 0) ===
+
+Clase real: 0
+Predicción del modelo: 0
+Probabilidades: [[0.97886723 0.02113277]]
+
+Importancia local de las features:
+  -0.73 < logarithm_glcm_Imc1 <= 0.09: -0.0295
+  original_glcm_ClusterShade > -0.04: -0.0191
+  -0.69 < squareroot_glcm_Imc1 <= 0.08: -0.0179
+  original_glcm_ClusterTendency > 0.19: -0.0163
+  squareroot_glcm_Correlation > 0.96: -0.0142
+  0.06 < original_glcm_Correlation <= 0.93: -0.0140
+  -0.39 < original_firstorder_RobustMeanAbsoluteDeviation <= 0.43: -0.0128
+  -0.80 < original_glcm_Imc1 <= 0.03: -0.0112
+  original_gldm_DependenceEntropy > 0.68: 0.0110
+  log-sigma-2-mm-3D_firstorder_10Percentile <= -0.58: -0.0100
