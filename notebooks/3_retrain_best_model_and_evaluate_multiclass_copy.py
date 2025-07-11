@@ -46,7 +46,6 @@ from sklearn.neighbors import KNeighborsClassifier
 
 # Herramientas para evaluación y calibración
 from sklearn.calibration import CalibratedClassifierCV, CalibrationDisplay
-from sklearn.metrics import brier_score_loss
 from sklearn.metrics import (
     roc_auc_score, matthews_corrcoef, cohen_kappa_score, f1_score,
     accuracy_score, recall_score, precision_score, balanced_accuracy_score,
@@ -101,22 +100,29 @@ def perform_shap_analysis(X_data, y_data, model_clf, preprocessor, shap_dir, rep
                                     columns=selected_features)
         
         # Seleccionar el explainer adecuado según el tipo de modelo
-        if isinstance(model_clf, (RandomForestClassifier, GradientBoostingClassifier)):
-            # Para modelos basados en árboles
-            explainer = shap.TreeExplainer(model_clf)
-        elif isinstance(model_clf, LogisticRegression):
-            # Para modelos lineales
-            try:
-                explainer = shap.LinearExplainer(model_clf, X_transformed)
-            except Exception:
-                # Si falla, usar KernelExplainer como alternativa
-                background = shap.kmeans(X_transformed, 50)
-                explainer = shap.KernelExplainer(model_clf.predict_proba, background)
-        else:
-            # Para otros modelos (SVM, KNN, NaiveBayes)
-            background = shap.kmeans(X_transformed, 50) # Resumen del dataset para acelerar
-            explainer = shap.KernelExplainer(model_clf.predict_proba, background)
+        # if isinstance(model_clf, (RandomForestClassifier, GradientBoostingClassifier)):
+        #     # Para modelos basados en árboles
+        #     explainer = shap.TreeExplainer(model_clf)
+        # elif isinstance(model_clf, LogisticRegression):
+        #     # Para modelos lineales
+        #     try:
+        #         explainer = shap.LinearExplainer(model_clf, X_transformed)
+        #     except Exception:
+        #         # Si falla, usar KernelExplainer como alternativa
+        #         background = shap.kmeans(X_transformed, 50)
+        #         explainer = shap.KernelExplainer(model_clf.predict_proba, background)
+        # else:
+        #     # Para otros modelos (SVM, KNN, NaiveBayes)
+        #     background = shap.kmeans(X_transformed, 50) # Resumen del dataset para acelerar
+        #     explainer = shap.KernelExplainer(model_clf.predict_proba, background)
         
+        # explainer = shap.Explainer(model_clf, X_transformed)
+        explainer = shap.Explainer(
+            model_clf.predict_proba,    # ahora es un callable
+            X_transformed,              # datos de fondo para el "masker"
+            feature_names=selected_features,
+            output_names=[f"Clase {c}" for c in np.unique(y_data)]
+        )
         # Calcular los valores SHAP
         explainer_result = explainer(X_transformed)            # → Explanation obj
         joblib.dump(explainer_result, os.path.join(shap_dir, 'shap_values.pkl'))
@@ -127,9 +133,8 @@ def perform_shap_analysis(X_data, y_data, model_clf, preprocessor, shap_dir, rep
             all_vals[:, :, i] for i in range(n_classes)
         ]
 
-
         # define your human labels for each class:
-        class_names = {i: f"Clase {c}" for i, c in enumerate(unique_classes)}
+        class_names={i: f"Clase {c}" for i,c in enumerate(np.unique(y_data))}
         # e.g. {0: "Clase 1", 1: "Clase 2", ...}
 
         # now call summary_plot over the entire 3-D array:
@@ -665,14 +670,14 @@ def main():
                         help="Ruta al CSV con las características (por defecto 'features_all_gland.csv').")
     parser.add_argument("--model", type=str, required=True,
                         choices=["SVM", "LogisticRegression", "RandomForest", 
-                                 "NaiveBayes", "KNN", "GradientBoosting"],
+                                "NaiveBayes", "KNN", "GradientBoosting"],
                         help="Modelo a entrenar/optimizar.")
     parser.add_argument("--n_folds", type=int, default=5,
                         help="Número de folds para la validación cruzada en BayesSearchCV")
     parser.add_argument("--variables", type=str, default="../../../results/radiomics/most_discriminant/gland/variables_usadas.txt",
                         help="Ruta al archivo variables_usadas.txt con las variables a utilizar.")
     args = parser.parse_args()
-    
+
     print("\nIniciando fine-tuning del modelo.")
     print(f"  --> Modelo seleccionado: {args.model}")
     print(f"  --> CSV utilizado: {args.csv}")
@@ -706,9 +711,9 @@ def main():
     os.makedirs(train_lime_dir, exist_ok=True)
     os.makedirs(test_shap_dir, exist_ok=True)
     os.makedirs(test_lime_dir, exist_ok=True)
-    
+
     print(f"\nCarpeta de salida creada/ubicada en: {os.path.relpath(output_parent_dir)}")
-    
+
     # ----------------------------------------------------------------------
     # 1) CARGAR CSV E IDENTIFICAR X, y, groups
     # ----------------------------------------------------------------------
@@ -721,12 +726,12 @@ def main():
     df['patient_id_type'] = df['patient_id'].astype(str)
     df = df.set_index('patient_id_type')
     print(f"Datos cargados. Dimensiones: {df.shape}")
-    
+
     # Preparar variables para el modelado
     y = df['label'].values
     groups = df['patient_id'].values
     X = df.drop(columns=['patient_id'])
-    
+
     # ----------------------------------------------------------------------
     # 1.1) FILTRAR LAS VARIABLES USADAS (variables_usadas.txt)
     # ----------------------------------------------------------------------
@@ -734,7 +739,7 @@ def main():
     with open(args.variables, "r", encoding="utf-8") as f_vars:
         used_vars = [line.strip() for line in f_vars if line.strip()]
     X = X[used_vars]
-    
+
     # ----------------------------------------------------------------------
     # 2) SEPARAR HOLD-OUT TEST SET Y CONJUNTO DE ENTRENAMIENTO
     # ----------------------------------------------------------------------
@@ -743,12 +748,12 @@ def main():
     X_train_full, X_test = X.iloc[train_idx], X.iloc[test_idx]
     y_train_full, y_test = y[train_idx], y[test_idx]
     groups_train_full = groups[train_idx]
-    
+
     # ----------------------------------------------------------------------
     # 3) DEFINIR PIPELINE Y ESPACIO DE BÚSQUEDA CON OPTIMIZACIÓN BAYESIANA
     # ----------------------------------------------------------------------
     number_folds = args.n_folds
-    
+
     # roc_auc_ovr = make_scorer(
     #     roc_auc_score,
     #     # needs_threshold=True,       # so it calls predict_proba/decsion_function
@@ -757,26 +762,27 @@ def main():
     #     average="macro"
     # )
 
-    multiclass_roc_auc_ovr = make_scorer(
+    roc_auc_ovr = make_scorer(
         roc_auc_score,
-        multi_class="ovr",    # one‐vs‐rest
-        needs_proba=True      # pass estimator.predict_proba
+        response_method="predict_proba",
+        multi_class="ovr",
+        average="macro"
     )
 
     score_group = {
-        'roc_auc_ovr'       : multiclass_roc_auc_ovr,
-        'f1_macro'          : 'f1_macro',
-        'balanced_accuracy' : 'balanced_accuracy'
+        "roc_auc_ovr": roc_auc_ovr,
+        "f1":            "f1_macro",
+        "balanced_accuracy": "balanced_accuracy"
     }
-    score_refit_str = 'roc_auc_ovr'
+    score_refit_str = "roc_auc_ovr"
     random_state_value = 42      # Semilla para reproducibilidad
-    
+
     # --- Configuración específica para cada tipo de modelo ---
     if selected_model == 'SVM':
         # Pipeline para SVM: Escalado → Filtro varianza → SVM
         pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             SVC(random_state=random_state_value, probability=True))
+                            VarianceThreshold(),
+                            SVC(random_state=random_state_value, probability=True))
         # Espacio de búsqueda para hiperparámetros
         param_grid = {
             'svc__C': Real(1e-4, 1e3, prior='log-uniform'),            # Regularización
@@ -788,13 +794,13 @@ def main():
     elif selected_model == 'LogisticRegression':
         # Pipeline para Regresión Logística
         pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             LogisticRegression(
-                                 class_weight='balanced', 
-                                 random_state=random_state_value,
-                                 solver='saga',  
-                                 max_iter=10000
-                             ))
+                            VarianceThreshold(),
+                            LogisticRegression(
+                                class_weight='balanced', 
+                                random_state=random_state_value,
+                                solver='saga',  
+                                max_iter=10000
+                            ))
         # Espacio de búsqueda
         param_grid = {
             'logisticregression__C': Real(1e-4, 1e3, prior='log-uniform'),  # Regularización
@@ -805,8 +811,8 @@ def main():
     elif selected_model == 'RandomForest':
         # Pipeline para Random Forest
         pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             RandomForestClassifier(n_jobs=-1, 
+                            VarianceThreshold(),
+                            RandomForestClassifier(n_jobs=-1, 
                                                     class_weight="balanced_subsample", 
                                                     random_state=random_state_value))
         # Espacio de búsqueda
@@ -820,15 +826,15 @@ def main():
     elif selected_model == 'NaiveBayes':
         # Pipeline para Naive Bayes
         pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             GaussianNB())
+                            VarianceThreshold(),
+                            GaussianNB())
         param_grid = {}  # Naive Bayes no tiene hiperparámetros a optimizar
         
     elif selected_model == 'KNN':
         # Pipeline para K-Nearest Neighbors
         pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             KNeighborsClassifier(n_jobs=-1))
+                            VarianceThreshold(),
+                            KNeighborsClassifier(n_jobs=-1))
         # Espacio de búsqueda
         param_grid = {
             'kneighborsclassifier__n_neighbors': Integer(2, 8),            # Número de vecinos
@@ -838,8 +844,8 @@ def main():
     elif selected_model == 'GradientBoosting':
         # Pipeline para Gradient Boosting
         pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             GradientBoostingClassifier(random_state=random_state_value))
+                            VarianceThreshold(),
+                            GradientBoostingClassifier(random_state=random_state_value))
         # Espacio de búsqueda
         param_grid = {
             'gradientboostingclassifier__n_estimators': Integer(50, 1024),        # Número de árboles
@@ -850,7 +856,7 @@ def main():
         }
     else:
         raise ValueError(f"Modelo '{selected_model}' no reconocido.")
-    
+
     # ----------------------------------------------------------------------
     # 4) AJUSTAR CON BayesSearchCV (OPTIMIZACIÓN BAYESIANA) SOBRE EL CONJUNTO DE ENTRENAMIENTO
     # ----------------------------------------------------------------------
@@ -867,30 +873,49 @@ def main():
     #     n_jobs=-1,                 # Usar todos los núcleos disponibles
     #     random_state=random_state_value
     # )
-    
-    search = BayesSearchCV(
-        estimator=pipe,
-        search_spaces=param_grid,
-        scoring=score_group,
-        refit=score_refit_str,
-        cv=cv,
-        n_iter=30,            # ★ try 20–30 to start, not 100+
-        verbose=2,            # ★ log progress
-        n_jobs=-1,
-        random_state=random_state_value
-    )
-    
 
-    # Ejecutar búsqueda de hiperparámetros
-    search.fit(X_train_full, y_train_full, groups=groups_train_full)
-    best_estimator = search.best_estimator_
-    print("\nOptimización completada.")
-    print(f"  --> Mejores parámetros: {search.best_params_}")
+    # search = BayesSearchCV(
+    #     estimator=pipe,
+    #     search_spaces=param_grid,
+    #     scoring=score_group,
+    #     refit=score_refit_str,
+    #     cv=cv,
+    #     n_iter=25,            # ★ try 20–30 to start, not 100+
+    #     verbose=2,            # ★ log progress
+    #     n_jobs=-1,
+    #     random_state=random_state_value
+    # )
+    from pathlib import Path
+    import joblib
 
-    # Guardar el mejor modelo
-    estimator_path = os.path.join(output_parent_dir, "best_estimator.pkl")
-    joblib.dump(best_estimator, estimator_path)
-    print(f"  --> Mejor estimador guardado en: {os.path.relpath(estimator_path)}")
+    output_parent_dir = Path("../data/features_t2w_multiclass/best_results")
+    estimator_path     = output_parent_dir / "best_estimator.pkl"
+
+    # load the fitted pipeline
+    best_estimator = joblib.load(estimator_path)
+
+    # pull out only the GB parameters
+    gb_params = {
+        k: v
+        for k, v in best_estimator.get_params().items()
+        if k.startswith("gradientboostingclassifier__")
+    }
+
+    print("Optimización completada.")
+    print(" → Mejores parámetros:", gb_params)
+    print(" → Mejor estimador cargado desde:", estimator_path)
+
+
+    # # Ejecutar búsqueda de hiperparámetros
+    # search.fit(X_train_full, y_train_full, groups=groups_train_full)
+    # best_estimator = search.best_estimator_
+    # print("\nOptimización completada.")
+    # print(f"  --> Mejores parámetros: {search.best_params_}")
+
+    # # Guardar el mejor modelo
+    # estimator_path = os.path.join(output_parent_dir, "best_estimator.pkl")
+    # joblib.dump(best_estimator, estimator_path)
+    # print(f"  --> Mejor estimador guardado en: {os.path.relpath(estimator_path)}")
 
     # Alternativamente, cargar un modelo previamente guardado
     # best_estimator = joblib.load(os.path.join(output_parent_dir, "best_estimator.pkl"))
@@ -899,23 +924,24 @@ def main():
     # 5) GUARDAR REPORTE EN "report.txt"
     # ----------------------------------------------------------------------
     report_path = os.path.join(output_parent_dir, "report.txt")
-    with open(report_path, "w", encoding="utf-8") as f_out:
-        f_out.write(f"=== Fine-tuning del modelo {selected_model} ===\n\n")
-        f_out.write(f"Mejores parámetros (según {score_refit_str}): {search.best_params_}\n\n")
-        f_out.write("=== Resultados CV (BayesSearch) ===\n")
-        idx_best = search.best_index_
-        for key in score_group:
-            mean_test = search.cv_results_[f'mean_test_{key}'][idx_best]
-            std_test  = search.cv_results_[f'std_test_{key}'][idx_best]
-            f_out.write(f"  CV {key}: {mean_test:.3f} +/- {std_test:.3f}\n")
-        f_out.write("\n")
+    # with open(report_path, "w", encoding="utf-8") as f_out:
+    #     f_out.write(f"=== Fine-tuning del modelo {selected_model} ===\n\n")
+    #     f_out.write(f"Mejores parámetros (según {score_refit_str}): {search.best_params_}\n\n")
+    #     f_out.write("=== Resultados CV (BayesSearch) ===\n")
+    #     idx_best = search.best_index_
+    #     for key in score_group:
+    #         mean_test = search.cv_results_[f'mean_test_{key}'][idx_best]
+    #         std_test  = search.cv_results_[f'std_test_{key}'][idx_best]
+    #         f_out.write(f"  CV {key}: {mean_test:.3f} +/- {std_test:.3f}\n")
+    #     f_out.write("\n")
     
     # ----------------------------------------------------------------------
     # 6) EVALUAR EN TEST
     # ----------------------------------------------------------------------
     print("\nEvaluando modelo en el conjunto de test (sin calibrar)...")
     y_pred_test = best_estimator.predict(X_test)
-    
+    import matplotlib.pyplot as plt
+
     # Generar matriz de confusión sin calibrar
     confusion_fig = os.path.join(output_parent_dir, "confusion_matrix.png")
     fig, ax = plt.subplots(figsize=(6, 5))
@@ -982,10 +1008,10 @@ def main():
         f_out.write(f"  Kappa: {kappa_:.3f}\n")
         f_out.write(f"  F1: {f1_:.3f}\n")
         f_out.write(f"  Accuracy: {acc_:.3f}\n")
-        f_out.write(f"  Sensitivity: {sens_:.3f}\n")
-        f_out.write(f"  Specificity: {spec_:.3f}\n")
-        f_out.write(f"  PPV: {ppv_:.3f}\n")
-        f_out.write(f"  NPV: {npv_:.3f}\n")
+        # f_out.write(f"  Sensitivity: {sens_:.3f}\n")
+        # f_out.write(f"  Specificity: {spec_:.3f}\n")
+        # f_out.write(f"  PPV: {ppv_:.3f}\n")
+        # f_out.write(f"  NPV: {npv_:.3f}\n")
         f_out.write(f"  Recall: {recall_macro_:.3f}\n")
         f_out.write(f"  Precision: {precision_macro_:.3f}\n")
         f_out.write(f"  Balanced Accuracy: {balacc_:.3f}\n\n")
@@ -998,65 +1024,108 @@ def main():
     cal_clf = CalibratedClassifierCV(best_estimator, method="sigmoid", cv=5)
     cal_clf.fit(X_train_full, y_train_full)
     
-    # --- Curva de calibración PRE (antes de calibrar) ---
-    calibration_fig_pre = os.path.join(calibration_dir, "calibration_pre.png")
-    fig, ax = plt.subplots(figsize=(8, 6))
-    CalibrationDisplay.from_estimator(
-        best_estimator, 
-        X_test, 
-        y_test, 
-        n_bins=10, 
-        name=f"{selected_model}_pre", 
-        ax=ax
-    )
+    # # --- Curva de calibración PRE (antes de calibrar) ---
+    # calibration_fig_pre = os.path.join(calibration_dir, "calibration_pre.png")
+    # fig, ax = plt.subplots(figsize=(8, 6))
+    # CalibrationDisplay.from_estimator(
+    #     best_estimator, 
+    #     X_test, 
+    #     y_test, 
+    #     n_bins=10, 
+    #     name=f"{selected_model}_pre", 
+    #     ax=ax
+    # )
 
-    for line in ax.get_lines():
-        line.set_color("black")
+    # for line in ax.get_lines():
+    #     line.set_color("black")
 
-    legend = ax.get_legend()
-    if legend:
-        for text in legend.get_texts():
-            text.set_color("black")
-        for line in legend.get_lines():
-            line.set_color("black")
-        for patch in legend.get_patches():
-            patch.set_edgecolor("black")
-            patch.set_facecolor("black")
+    # legend = ax.get_legend()
+    # if legend:
+    #     for text in legend.get_texts():
+    #         text.set_color("black")
+    #     for line in legend.get_lines():
+    #         line.set_color("black")
+    #     for patch in legend.get_patches():
+    #         patch.set_edgecolor("black")
+    #         patch.set_facecolor("black")
             
-    # ax.set_title(f"Calibration Curve (pre), {selected_model}", fontsize=14)
-    plt.savefig(calibration_fig_pre, dpi=dpi, bbox_inches='tight')
-    plt.close()
-    print(f"  --> Calibration curve (pre) guardada en: {calibration_fig_pre}")
+    # # ax.set_title(f"Calibration Curve (pre), {selected_model}", fontsize=14)
+    # plt.savefig(calibration_fig_pre, dpi=dpi, bbox_inches='tight')
+    # plt.close()
+    # print(f"  --> Calibration curve (pre) guardada en: {calibration_fig_pre}")
     
-    # --- Curva de calibración POST (después de calibrar) ---
-    calibration_fig_post = os.path.join(calibration_dir, "calibration_post.png")
-    fig, ax = plt.subplots(figsize=(8, 6))
-    CalibrationDisplay.from_estimator(
-        cal_clf, 
-        X_test, 
-        y_test, 
-        n_bins=10, 
-        name=f"{selected_model}_post", 
-        ax=ax
-    )
-    # ax.set_title(f"Calibration Curve (post), {selected_model}", fontsize=14)
+    # # --- Curva de calibración POST (después de calibrar) ---
+    # calibration_fig_post = os.path.join(calibration_dir, "calibration_post.png")
+    # fig, ax = plt.subplots(figsize=(8, 6))
+    # CalibrationDisplay.from_estimator(
+    #     cal_clf, 
+    #     X_test, 
+    #     y_test, 
+    #     n_bins=10, 
+    #     name=f"{selected_model}_post", 
+    #     ax=ax
+    # )
+    # # ax.set_title(f"Calibration Curve (post), {selected_model}", fontsize=14)
 
-    for line in ax.get_lines():
-        line.set_color("black")
+    # for line in ax.get_lines():
+    #     line.set_color("black")
 
-    legend = ax.get_legend()
-    if legend:
-        for text in legend.get_texts():
-            text.set_color("black")
-        for line in legend.get_lines():
-            line.set_color("black")
-        for patch in legend.get_patches():
-            patch.set_edgecolor("black")
-            patch.set_facecolor("black")
+    # legend = ax.get_legend()
+    # if legend:
+    #     for text in legend.get_texts():
+    #         text.set_color("black")
+    #     for line in legend.get_lines():
+    #         line.set_color("black")
+    #     for patch in legend.get_patches():
+    #         patch.set_edgecolor("black")
+    #         patch.set_facecolor("black")
             
-    plt.savefig(calibration_fig_post, dpi=dpi, bbox_inches='tight')
-    plt.close()
-    print(f"  --> Calibration curve (post) guardada en: {calibration_fig_post}")
+    # plt.savefig(calibration_fig_post, dpi=dpi, bbox_inches='tight')
+    # plt.close()
+    # print(f"  --> Calibration curve (post) guardada en: {calibration_fig_post}")
+    
+    
+    
+    from sklearn.calibration import calibration_curve
+    import matplotlib.pyplot as plt
+    from sklearn.preprocessing import label_binarize
+
+    # one-hot encode the test labels
+    classes    = [1,2,3,4,5]
+    y_test_bin = label_binarize(y_test, classes=classes)
+
+    # pre- and post- calibration probabilities
+    probas_pre  = best_estimator.predict_proba(X_test)
+    probas_post = cal_clf.predict_proba (X_test)
+
+    # Plot
+    for tag, probas in [("pre",  probas_pre),
+                        ("post", probas_post)]:
+        fig, ax = plt.subplots(figsize=(8, 6))
+        for i, cls in enumerate(classes):
+            prob_true, prob_pred = calibration_curve(
+                y_test_bin[:, i],
+                probas[:, i],
+                n_bins=10,
+                strategy="uniform"
+            )
+            ax.plot(prob_pred,
+                    prob_true,
+                    marker="o",
+                    label=f"Clase {cls}")
+        ax.plot([0,1], [0,1], "k:", label="Ideál")
+        ax.set_title(f"Calibration curves ({tag})")
+        ax.set_xlabel("Probabilidad predicha")
+        ax.set_ylabel("Prob. observada")
+        ax.legend(fontsize=8)
+        plt.tight_layout()
+        plt.savefig(os.path.join(calibration_dir,
+                                f"calibration_curve_{tag}.png"),
+                    dpi=dpi,
+                    bbox_inches="tight")
+        plt.close(fig)
+
+    
 
     # Métricas de calibración 
     def calibration_error(y_true, y_prob, n_bins=10, norm='l1'):
@@ -1085,16 +1154,62 @@ def main():
         return ece
 
     # 1) Probabilidades (sin / con Platt)
-    p_pre  = best_estimator.predict_proba(X_test)[:, 1]
-    p_post = cal_clf.predict_proba(X_test)[:, 1]
+    p_pre  = best_estimator.predict_proba(X_test)      # shape (n_samples, 5)
+    p_post = cal_clf.predict_proba(X_test)
 
-    # 2) Expected Calibration Error (ECE)
-    ece_pre  = calibration_error(y_test, p_pre,  n_bins=10, norm='l1')
-    ece_post = calibration_error(y_test, p_post, n_bins=10, norm='l1')
+    from sklearn.preprocessing import label_binarize
 
+    def multiclass_calibration_error(y_true, y_prob, n_bins=10, norm='l1'):
+        """
+        Compute the multiclass Expected Calibration Error (ECE) by
+        averaging the class-wise Brier‐style ECE.
+        
+        y_true: array-like of shape (n_samples,) with integer labels 0..K-1
+        y_prob: array-like of shape (n_samples, K) with class probabilities
+        """
+        y_true = np.asarray(y_true)
+        y_prob = np.asarray(y_prob)
+        classes = np.unique(y_true)
+        K = len(classes)
+        
+        # one-hot encode
+        y_true_bin = label_binarize(y_true, classes=classes)  # shape (n, K)
+        
+        ece_total = 0.0
+        N = len(y_true)
+        bins = np.linspace(0.0, 1.0, n_bins + 1)
+        
+        # for each class, compute its ECE
+        for k in range(K):
+            pk = y_prob[:, k]
+            tk = y_true_bin[:, k]
+            
+            # assign each prediction to a bin
+            bin_ids = np.digitize(pk, bins, right=True) - 1
+            bin_ids = np.clip(bin_ids, 0, n_bins - 1)
+            
+            ece_k = 0.0
+            for i in range(n_bins):
+                mask = bin_ids == i
+                if not mask.any():
+                    continue
+                prob_avg = pk[mask].mean()
+                acc_avg  = tk[mask].mean()
+                err = abs(prob_avg - acc_avg) if norm == 'l1' else (prob_avg - acc_avg)**2
+                ece_k += err * mask.sum() / N
+            
+            ece_total += ece_k
+        
+        return ece_total / K
+
+
+
+    # NEW — multiclass
+    ece_pre  = multiclass_calibration_error(y_test, p_pre,  n_bins=10, norm='l1')
+    ece_post = multiclass_calibration_error(y_test, p_post, n_bins=10, norm='l1')
     # 3) Brier score
-    brier_pre  = brier_score_loss(y_test, p_pre)
-    brier_post = brier_score_loss(y_test, p_post)
+    brier_pre  = np.mean(np.sum((p_pre  - y_test_bin) ** 2, axis=1))
+    brier_post = np.mean(np.sum((p_post - y_test_bin) ** 2, axis=1))
 
     # 4) Volcar resultados al informe
     with open(report_path, "a", encoding="utf-8") as f_out:
@@ -1113,7 +1228,7 @@ def main():
     # Encontrar el umbral óptimo para F1
     for thresh in thresholds:
         y_pred_thresh = (cal_clf.predict_proba(X_test)[:, 1] >= thresh).astype(int)
-        f1_val = f1_score(y_test, y_pred_thresh)
+        f1_val = f1_score(y_test, y_pred_thresh,average='macro')
         results.append({'threshold': thresh, 'f1': f1_val})
         if f1_val > best_f1:
             best_f1 = f1_val

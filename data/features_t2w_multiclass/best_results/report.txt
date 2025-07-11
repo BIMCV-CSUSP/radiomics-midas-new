@@ -1,9 +1,359 @@
 === Fine-tuning del modelo GradientBoosting ===
 
-Mejores parámetros (según roc_auc): OrderedDict([('gradientboostingclassifier__learning_rate', 0.009427878090264678), ('gradientboostingclassifier__max_depth', 2), ('gradientboostingclassifier__max_features', 'sqrt'), ('gradientboostingclassifier__n_estimators', 707), ('gradientboostingclassifier__subsample', 0.5)])
+=== Evaluación en Test (NO calibrado) ===
+  Figura de Confusion Matrix: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  AUC: 0.888
+  MCC: 0.453
+  Kappa: 0.423
+  F1: 0.292
+  Accuracy: 0.638
+  Recall: 0.342
+  Precision: 0.254
+  Balanced Accuracy: 0.342
 
-=== Resultados CV (BayesSearch) ===
-  CV roc_auc: 0.883 +/- 0.011
-  CV f1: 0.497 +/- 0.042
-  CV balanced_accuracy: 0.476 +/- 0.035
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+         1.0       0.00      0.00      0.00        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.57      0.78      0.66       253
+         4.0       0.70      0.93      0.80       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.64       718
+   macro avg       0.25      0.34      0.29       718
+weighted avg       0.47      0.64      0.54       718
+
+
+=== Evaluación en Test (NO calibrado) ===
+  Figura de Confusion Matrix: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  AUC: 0.888
+  MCC: 0.453
+  Kappa: 0.423
+  F1: 0.292
+  Accuracy: 0.638
+  Recall: 0.342
+  Precision: 0.254
+  Balanced Accuracy: 0.342
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+         1.0       0.00      0.00      0.00        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.57      0.78      0.66       253
+         4.0       0.70      0.93      0.80       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.64       718
+   macro avg       0.25      0.34      0.29       718
+weighted avg       0.47      0.64      0.54       718
+
+
+=== Evaluación en Test (NO calibrado) ===
+  Figura de Confusion Matrix: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  AUC: 0.888
+  MCC: 0.453
+  Kappa: 0.423
+  F1: 0.292
+  Accuracy: 0.638
+  Recall: 0.342
+  Precision: 0.254
+  Balanced Accuracy: 0.342
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+         1.0       0.00      0.00      0.00        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.57      0.78      0.66       253
+         4.0       0.70      0.93      0.80       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.64       718
+   macro avg       0.25      0.34      0.29       718
+weighted avg       0.47      0.64      0.54       718
+
+
+=== Evaluación en Test (NO calibrado) ===
+  Figura de Confusion Matrix: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  AUC: 0.888
+  MCC: 0.453
+  Kappa: 0.423
+  F1: 0.292
+  Accuracy: 0.638
+  Recall: 0.342
+  Precision: 0.254
+  Balanced Accuracy: 0.342
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+         1.0       0.00      0.00      0.00        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.57      0.78      0.66       253
+         4.0       0.70      0.93      0.80       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.64       718
+   macro avg       0.25      0.34      0.29       718
+weighted avg       0.47      0.64      0.54       718
+
+
+=== Evaluación en Test (NO calibrado) ===
+  Figura de Confusion Matrix: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  AUC: 0.888
+  MCC: 0.453
+  Kappa: 0.423
+  F1: 0.292
+  Accuracy: 0.638
+  Recall: 0.342
+  Precision: 0.254
+  Balanced Accuracy: 0.342
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+         1.0       0.00      0.00      0.00        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.57      0.78      0.66       253
+         4.0       0.70      0.93      0.80       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.64       718
+   macro avg       0.25      0.34      0.29       718
+weighted avg       0.47      0.64      0.54       718
+
+
+=== Métricas de calibración ===
+  ECE  (pre):  0.106
+  ECE  (post): 0.037
+  Brier (pre): 0.642
+  Brier (post): 0.436
+
+=== Evaluación en Test (NO calibrado) ===
+  Figura de Confusion Matrix: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  AUC: 0.888
+  MCC: 0.453
+  Kappa: 0.423
+  F1: 0.292
+  Accuracy: 0.638
+  Recall: 0.342
+  Precision: 0.254
+  Balanced Accuracy: 0.342
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+         1.0       0.00      0.00      0.00        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.57      0.78      0.66       253
+         4.0       0.70      0.93      0.80       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.64       718
+   macro avg       0.25      0.34      0.29       718
+weighted avg       0.47      0.64      0.54       718
+
+
+=== Métricas de calibración ===
+  ECE  (pre):  0.106
+  ECE  (post): 0.037
+  Brier (pre): 0.642
+  Brier (post): 0.436
+
+=== Ajuste de Umbral (Resultados con el mejor threshold) ===
+Resultados para cada threshold:
+  Threshold: 0.10 – F1 (macro): 0.020
+  Threshold: 0.20 – F1 (macro): 0.021
+  Threshold: 0.30 – F1 (macro): 0.025
+  Threshold: 0.40 – F1 (macro): 0.029
+  Threshold: 0.50 – F1 (macro): 0.038
+  Threshold: 0.60 – F1 (macro): 0.013
+  Threshold: 0.70 – F1 (macro): 0.000
+  Threshold: 0.80 – F1 (macro): 0.000
+  Threshold: 0.90 – F1 (macro): 0.000
+
+Mejor threshold seleccionado (según F1 macro): 0.50
+
+Classification Report (threshold=0.50):
+              precision    recall  f1-score   support
+
+         0.0       0.00      0.00      0.00         0
+         1.0       0.19      0.29      0.23        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.00      0.00      0.00       253
+         4.0       0.00      0.00      0.00       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.01       718
+   macro avg       0.03      0.05      0.04       718
+weighted avg       0.00      0.01      0.01       718
+
+ROC-AUC (ovr, macro): 0.888
+MCC: 0.027
+Kappa: 0.006
+F1 (macro): 0.038
+Precision (macro): 0.031
+Recall (macro): 0.049
+Accuracy: 0.007
+Balanced Accuracy: 0.059
+
+Confusion Matrix (Calibrado con threshold=0.50) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/features_t2w_multiclass/best_results/calibration/confusion_matrix_best_threshold.png
+
+=== SHAP Analysis (entrenamiento) ===
+ No se pudo generar SHAP (modelo no soportado o error):
+  InvalidModelError('GradientBoostingClassifier is only supported for binary classification right now!')
+
+=== SHAP Analysis (test) ===
+ No se pudo generar SHAP (modelo no soportado o error):
+  InvalidModelError('GradientBoostingClassifier is only supported for binary classification right now!')
+
+=== Evaluación en Test (NO calibrado) ===
+  Figura de Confusion Matrix: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  AUC: 0.888
+  MCC: 0.453
+  Kappa: 0.423
+  F1: 0.292
+  Accuracy: 0.638
+  Recall: 0.342
+  Precision: 0.254
+  Balanced Accuracy: 0.342
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+         1.0       0.00      0.00      0.00        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.57      0.78      0.66       253
+         4.0       0.70      0.93      0.80       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.64       718
+   macro avg       0.25      0.34      0.29       718
+weighted avg       0.47      0.64      0.54       718
+
+
+=== Métricas de calibración ===
+  ECE  (pre):  0.106
+  ECE  (post): 0.037
+  Brier (pre): 0.642
+  Brier (post): 0.436
+
+=== Ajuste de Umbral (Resultados con el mejor threshold) ===
+Resultados para cada threshold:
+  Threshold: 0.10 – F1 (macro): 0.020
+  Threshold: 0.20 – F1 (macro): 0.021
+  Threshold: 0.30 – F1 (macro): 0.025
+  Threshold: 0.40 – F1 (macro): 0.029
+  Threshold: 0.50 – F1 (macro): 0.038
+  Threshold: 0.60 – F1 (macro): 0.013
+  Threshold: 0.70 – F1 (macro): 0.000
+  Threshold: 0.80 – F1 (macro): 0.000
+  Threshold: 0.90 – F1 (macro): 0.000
+
+Mejor threshold seleccionado (según F1 macro): 0.50
+
+Classification Report (threshold=0.50):
+              precision    recall  f1-score   support
+
+         0.0       0.00      0.00      0.00         0
+         1.0       0.19      0.29      0.23        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.00      0.00      0.00       253
+         4.0       0.00      0.00      0.00       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.01       718
+   macro avg       0.03      0.05      0.04       718
+weighted avg       0.00      0.01      0.01       718
+
+ROC-AUC (ovr, macro): 0.888
+MCC: 0.027
+Kappa: 0.006
+F1 (macro): 0.038
+Precision (macro): 0.031
+Recall (macro): 0.049
+Accuracy: 0.007
+Balanced Accuracy: 0.059
+
+Confusion Matrix (Calibrado con threshold=0.50) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/features_t2w_multiclass/best_results/calibration/confusion_matrix_best_threshold.png
+
+=== SHAP Analysis (entrenamiento) ===
+ No se pudo generar SHAP (modelo no soportado o error):
+  TypeError("The passed model is not callable and cannot be analyzed directly with the given masker! Model: GradientBoostingClassifier(learning_rate=0.0001, max_depth=5,\n                           max_features='sqrt', n_estimators=1024,\n                           random_state=42, subsample=0.5)")
+
+=== SHAP Analysis (test) ===
+ No se pudo generar SHAP (modelo no soportado o error):
+  TypeError("The passed model is not callable and cannot be analyzed directly with the given masker! Model: GradientBoostingClassifier(learning_rate=0.0001, max_depth=5,\n                           max_features='sqrt', n_estimators=1024,\n                           random_state=42, subsample=0.5)")
+
+=== Evaluación en Test (NO calibrado) ===
+  Figura de Confusion Matrix: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  AUC: 0.888
+  MCC: 0.453
+  Kappa: 0.423
+  F1: 0.292
+  Accuracy: 0.638
+  Recall: 0.342
+  Precision: 0.254
+  Balanced Accuracy: 0.342
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+         1.0       0.00      0.00      0.00        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.57      0.78      0.66       253
+         4.0       0.70      0.93      0.80       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.64       718
+   macro avg       0.25      0.34      0.29       718
+weighted avg       0.47      0.64      0.54       718
+
+
+=== Métricas de calibración ===
+  ECE  (pre):  0.106
+  ECE  (post): 0.037
+  Brier (pre): 0.642
+  Brier (post): 0.436
+
+=== Ajuste de Umbral (Resultados con el mejor threshold) ===
+Resultados para cada threshold:
+  Threshold: 0.10 – F1 (macro): 0.020
+  Threshold: 0.20 – F1 (macro): 0.021
+  Threshold: 0.30 – F1 (macro): 0.025
+  Threshold: 0.40 – F1 (macro): 0.029
+  Threshold: 0.50 – F1 (macro): 0.038
+  Threshold: 0.60 – F1 (macro): 0.013
+  Threshold: 0.70 – F1 (macro): 0.000
+  Threshold: 0.80 – F1 (macro): 0.000
+  Threshold: 0.90 – F1 (macro): 0.000
+
+Mejor threshold seleccionado (según F1 macro): 0.50
+
+Classification Report (threshold=0.50):
+              precision    recall  f1-score   support
+
+         0.0       0.00      0.00      0.00         0
+         1.0       0.19      0.29      0.23        17
+         2.0       0.00      0.00      0.00       120
+         3.0       0.00      0.00      0.00       253
+         4.0       0.00      0.00      0.00       280
+         5.0       0.00      0.00      0.00        48
+
+    accuracy                           0.01       718
+   macro avg       0.03      0.05      0.04       718
+weighted avg       0.00      0.01      0.01       718
+
+ROC-AUC (ovr, macro): 0.888
+MCC: 0.027
+Kappa: 0.006
+F1 (macro): 0.038
+Precision (macro): 0.031
+Recall (macro): 0.049
+Accuracy: 0.007
+Balanced Accuracy: 0.059
+
+Confusion Matrix (Calibrado con threshold=0.50) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/features_t2w_multiclass/best_results/calibration/confusion_matrix_best_threshold.png
 
