@@ -1,0 +1,248 @@
+=================================
+Kruskal-Wallis by feature - SHAP class 1
+alpha = 0.05
+Total features: 239
+=================================
+
+Results by feature (raw and corrected p-value):
+    logarithm_glrlm_RunEntropy: raw p-value=4.9679e-09, corrected p-value=3.5272e-07 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_Skewness: raw p-value=2.3340e-14, corrected p-value=2.3806e-12 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_RootMeanSquared: raw p-value=9.3566e-31, corrected p-value=1.4971e-28 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_RobustMeanAbsoluteDeviation: raw p-value=4.6005e-08, corrected p-value=2.9904e-06 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_MeanAbsoluteDeviation: raw p-value=1.9784e-57, corrected p-value=4.3724e-55 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_Kurtosis: raw p-value=8.2529e-63, corrected p-value=1.9147e-60 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_Energy: raw p-value=3.8546e-23, corrected p-value=5.1651e-21 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_90Percentile: raw p-value=9.1624e-63, corrected p-value=2.1165e-60 => SIGNIFICANT DIFFERENCE
+    exponential_firstorder_RobustMeanAbsoluteDeviation: raw p-value=1.3647e-54, corrected p-value=2.9615e-52 => SIGNIFICANT DIFFERENCE
+    squareroot_gldm_HighGrayLevelEmphasis: raw p-value=1.1425e-08, corrected p-value=7.7693e-07 => SIGNIFICANT DIFFERENCE
+    squareroot_gldm_GrayLevelVariance: raw p-value=2.6669e-15, corrected p-value=2.8269e-13 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_TotalEnergy: raw p-value=7.1202e-11, corrected p-value=5.7674e-09 => SIGNIFICANT DIFFERENCE
+    squareroot_gldm_DependenceEntropy: raw p-value=4.6731e-08, corrected p-value=2.9908e-06 => SIGNIFICANT DIFFERENCE
+    exponential_firstorder_Variance: raw p-value=2.7194e-40, corrected p-value=5.1396e-38 => SIGNIFICANT DIFFERENCE
+    squareroot_glszm_ZoneEntropy: raw p-value=1.0437e-55, corrected p-value=2.2857e-53 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_ClusterTendency: raw p-value=2.2444e-03, corrected p-value=3.9104e-02 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_Correlation: raw p-value=5.9657e-26, corrected p-value=8.4712e-24 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_Idmn: raw p-value=5.0660e-44, corrected p-value=9.9801e-42 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_SumEntropy: raw p-value=2.4842e-06, corrected p-value=1.1924e-04 => SIGNIFICANT DIFFERENCE
+    logarithm_glszm_ZoneEntropy: raw p-value=2.4424e-16, corrected p-value=2.6378e-14 => SIGNIFICANT DIFFERENCE
+    logarithm_ngtdm_Contrast: raw p-value=7.2668e-03, corrected p-value=1.0948e-01 => no significant difference
+    logarithm_glrlm_LongRunHighGrayLevelEmphasis: raw p-value=1.3879e-47, corrected p-value=2.8174e-45 => SIGNIFICANT DIFFERENCE
+    logarithm_gldm_GrayLevelVariance: raw p-value=7.2013e-04, corrected p-value=1.6563e-02 => SIGNIFICANT DIFFERENCE
+    squareroot_ngtdm_Contrast: raw p-value=1.8371e-52, corrected p-value=3.8763e-50 => SIGNIFICANT DIFFERENCE
+    logarithm_glrlm_HighGrayLevelRunEmphasis: raw p-value=3.0429e-40, corrected p-value=5.7206e-38 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_Variance: raw p-value=2.8379e-06, corrected p-value=1.3160e-04 => SIGNIFICANT DIFFERENCE
+    original_ngtdm_Contrast: raw p-value=7.3030e-70, corrected p-value=1.7308e-67 => SIGNIFICANT DIFFERENCE
+    original_glcm_Autocorrelation: raw p-value=6.8427e-03, corrected p-value=1.0948e-01 => no significant difference
+    original_firstorder_90Percentile: raw p-value=2.8630e-06, corrected p-value=1.3160e-04 => SIGNIFICANT DIFFERENCE
+    original_glcm_Correlation: raw p-value=1.9456e-11, corrected p-value=1.6537e-09 => SIGNIFICANT DIFFERENCE
+    original_firstorder_MeanAbsoluteDeviation: raw p-value=6.7180e-77, corrected p-value=1.6056e-74 => SIGNIFICANT DIFFERENCE
+    original_glcm_ClusterTendency: raw p-value=7.5408e-58, corrected p-value=1.6741e-55 => SIGNIFICANT DIFFERENCE
+    original_glcm_ClusterShade: raw p-value=2.3440e-58, corrected p-value=5.2271e-56 => SIGNIFICANT DIFFERENCE
+    original_firstorder_RobustMeanAbsoluteDeviation: raw p-value=6.4376e-08, corrected p-value=4.0011e-06 => SIGNIFICANT DIFFERENCE
+    original_glcm_ClusterProminence: raw p-value=3.3768e-28, corrected p-value=4.9976e-26 => SIGNIFICANT DIFFERENCE
+    original_glcm_Imc2: raw p-value=3.2038e-34, corrected p-value=5.4465e-32 => SIGNIFICANT DIFFERENCE
+    original_glcm_Imc1: raw p-value=9.6673e-24, corrected p-value=1.3148e-21 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_Autocorrelation: raw p-value=2.3287e-48, corrected p-value=4.7738e-46 => SIGNIFICANT DIFFERENCE
+    original_glrlm_RunEntropy: raw p-value=2.7483e-04, corrected p-value=7.9701e-03 => SIGNIFICANT DIFFERENCE
+    original_glrlm_GrayLevelVariance: raw p-value=3.5150e-21, corrected p-value=4.4992e-19 => SIGNIFICANT DIFFERENCE
+    original_glcm_JointEntropy: raw p-value=2.9344e-51, corrected p-value=6.1037e-49 => SIGNIFICANT DIFFERENCE
+    original_glcm_SumEntropy: raw p-value=1.8455e-39, corrected p-value=3.3588e-37 => SIGNIFICANT DIFFERENCE
+    original_glcm_SumSquares: raw p-value=4.8829e-61, corrected p-value=1.1133e-58 => SIGNIFICANT DIFFERENCE
+    original_firstorder_Uniformity: raw p-value=8.2648e-04, corrected p-value=1.8183e-02 => SIGNIFICANT DIFFERENCE
+    original_firstorder_InterquartileRange: raw p-value=1.0606e-11, corrected p-value=9.3332e-10 => SIGNIFICANT DIFFERENCE
+    original_glrlm_GrayLevelNonUniformityNormalized: raw p-value=5.2515e-52, corrected p-value=1.0976e-49 => SIGNIFICANT DIFFERENCE
+    original_firstorder_Entropy: raw p-value=5.2900e-46, corrected p-value=1.0686e-43 => SIGNIFICANT DIFFERENCE
+    squareroot_glrlm_GrayLevelVariance: raw p-value=1.8480e-19, corrected p-value=2.2176e-17 => SIGNIFICANT DIFFERENCE
+    original_glszm_ZoneEntropy: raw p-value=4.1950e-48, corrected p-value=8.5578e-46 => SIGNIFICANT DIFFERENCE
+    original_firstorder_Variance: raw p-value=1.0962e-61, corrected p-value=2.5213e-59 => SIGNIFICANT DIFFERENCE
+    logarithm_gldm_LargeDependenceHighGrayLevelEmphasis: raw p-value=1.3354e-20, corrected p-value=1.6826e-18 => SIGNIFICANT DIFFERENCE
+    original_glcm_MCC: raw p-value=4.2296e-26, corrected p-value=6.0483e-24 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_SumAverage: raw p-value=5.9584e-20, corrected p-value=7.2692e-18 => SIGNIFICANT DIFFERENCE
+    original_gldm_GrayLevelVariance: raw p-value=1.3526e-32, corrected p-value=2.2318e-30 => SIGNIFICANT DIFFERENCE
+    original_gldm_DependenceEntropy: raw p-value=1.3853e-04, corrected p-value=4.2945e-03 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_Autocorrelation: raw p-value=3.1168e-18, corrected p-value=3.5532e-16 => SIGNIFICANT DIFFERENCE
+    log-sigma-3-mm-3D_firstorder_10Percentile: raw p-value=7.5974e-53, corrected p-value=1.6107e-50 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_firstorder_10Percentile: raw p-value=2.8381e-60, corrected p-value=6.3858e-58 => SIGNIFICANT DIFFERENCE
+    squareroot_glrlm_RunEntropy: raw p-value=4.6302e-30, corrected p-value=7.2231e-28 => SIGNIFICANT DIFFERENCE
+    squareroot_glrlm_LongRunHighGrayLevelEmphasis: raw p-value=3.9111e-02, corrected p-value=3.1290e-01 => no significant difference
+    logarithm_glcm_SumSquares: raw p-value=1.6911e-30, corrected p-value=2.6719e-28 => SIGNIFICANT DIFFERENCE
+    squareroot_glrlm_HighGrayLevelRunEmphasis: raw p-value=5.8540e-01, corrected p-value=1.0000e+00 => no significant difference
+    squareroot_glcm_SumSquares: raw p-value=1.0070e-12, corrected p-value=9.4656e-11 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_SumSquares: raw p-value=2.8432e-54, corrected p-value=6.0845e-52 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_SumEntropy: raw p-value=3.0166e-21, corrected p-value=3.8915e-19 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_MCC: raw p-value=3.3066e-22, corrected p-value=4.3977e-20 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_JointEntropy: raw p-value=2.4431e-68, corrected p-value=5.7413e-66 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_ClusterTendency: raw p-value=3.0343e-52, corrected p-value=6.3721e-50 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_JointAverage: raw p-value=9.6103e-51, corrected p-value=1.9893e-48 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_InverseVariance: raw p-value=4.8290e-12, corrected p-value=4.3944e-10 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_Imc2: raw p-value=1.3759e-61, corrected p-value=3.1507e-59 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_Imc1: raw p-value=5.9477e-36, corrected p-value=1.0587e-33 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_Idn: raw p-value=1.0750e-72, corrected p-value=2.5585e-70 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_Idmn: raw p-value=1.1519e-50, corrected p-value=2.3730e-48 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_Correlation: raw p-value=4.2667e-07, corrected p-value=2.3467e-05 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_SumAverage: raw p-value=5.9619e-06, corrected p-value=2.5040e-04 => SIGNIFICANT DIFFERENCE
+    log-sigma-0-6-mm-3D_firstorder_10Percentile: raw p-value=1.1401e-12, corrected p-value=1.0603e-10 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_ClusterShade: raw p-value=9.9983e-10, corrected p-value=7.2988e-08 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_Imc2: raw p-value=5.8471e-20, corrected p-value=7.1919e-18 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_Idn: raw p-value=1.2828e-10, corrected p-value=1.0134e-08 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_MCC: raw p-value=7.1332e-19, corrected p-value=8.4885e-17 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_JointAverage: raw p-value=7.1916e-41, corrected p-value=1.3808e-38 => SIGNIFICANT DIFFERENCE
+    exponential_firstorder_90Percentile: raw p-value=8.7449e-28, corrected p-value=1.2680e-25 => SIGNIFICANT DIFFERENCE
+    exponential_firstorder_InterquartileRange: raw p-value=3.0772e-18, corrected p-value=3.5388e-16 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_Imc2: raw p-value=3.1393e-40, corrected p-value=5.8704e-38 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_SumEntropy: raw p-value=3.8151e-34, corrected p-value=6.4476e-32 => SIGNIFICANT DIFFERENCE
+    exponential_firstorder_MeanAbsoluteDeviation: raw p-value=2.0580e-44, corrected p-value=4.0954e-42 => SIGNIFICANT DIFFERENCE
+    wavelet2-HL_firstorder_10Percentile: raw p-value=9.2353e-22, corrected p-value=1.2098e-19 => SIGNIFICANT DIFFERENCE
+    squareroot_glszm_GrayLevelVariance: raw p-value=1.2102e-06, corrected p-value=6.0918e-05 => SIGNIFICANT DIFFERENCE
+    squareroot_glszm_GrayLevelNonUniformityNormalized: raw p-value=6.1618e-10, corrected p-value=4.6213e-08 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_Imc1: raw p-value=1.7463e-35, corrected p-value=3.0734e-33 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_Variance: raw p-value=1.0737e-24, corrected p-value=1.4817e-22 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_90Percentile: raw p-value=3.3296e-04, corrected p-value=9.3229e-03 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_ClusterProminence: raw p-value=2.4437e-54, corrected p-value=5.2540e-52 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_ClusterTendency: raw p-value=2.7536e-42, corrected p-value=5.3420e-40 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_InterquartileRange: raw p-value=7.3794e-28, corrected p-value=1.0774e-25 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_Correlation: raw p-value=1.7461e-64, corrected p-value=4.0684e-62 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_MeanAbsoluteDeviation: raw p-value=4.2637e-06, corrected p-value=1.8760e-04 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_RobustMeanAbsoluteDeviation: raw p-value=2.7368e-13, corrected p-value=2.6273e-11 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_RootMeanSquared: raw p-value=9.0205e-61, corrected p-value=2.0386e-58 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_Skewness: raw p-value=3.5588e-05, corrected p-value=1.2100e-03 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_Kurtosis: raw p-value=4.1433e-04, corrected p-value=1.0773e-02 => SIGNIFICANT DIFFERENCE
+    squareroot_glrlm_ShortRunHighGrayLevelEmphasis: raw p-value=1.1945e-06, corrected p-value=6.0918e-05 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_InterquartileRange: raw p-value=7.5355e-11, corrected p-value=6.0284e-09 => SIGNIFICANT DIFFERENCE
+    original_glcm_DifferenceAverage: raw p-value=8.5256e-31, corrected p-value=1.3726e-28 => SIGNIFICANT DIFFERENCE
+    wavelet-HL_firstorder_10Percentile: raw p-value=3.2198e-35, corrected p-value=5.6347e-33 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_DifferenceAverage: raw p-value=1.2737e-68, corrected p-value=3.0060e-66 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_RobustMeanAbsoluteDeviation: raw p-value=1.2123e-20, corrected p-value=1.5396e-18 => SIGNIFICANT DIFFERENCE
+    logarithm_gldm_HighGrayLevelEmphasis: raw p-value=3.4766e-02, corrected p-value=3.1290e-01 => no significant difference
+    logarithm_glrlm_GrayLevelVariance: raw p-value=1.4766e-40, corrected p-value=2.8055e-38 => SIGNIFICANT DIFFERENCE
+    squareroot_glszm_HighGrayLevelZoneEmphasis: raw p-value=1.0533e-06, corrected p-value=5.4770e-05 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_InterquartileRange: raw p-value=2.0682e-06, corrected p-value=1.0134e-04 => SIGNIFICANT DIFFERENCE
+    logarithm_glszm_GrayLevelNonUniformityNormalized: raw p-value=1.1928e-05, corrected p-value=4.6518e-04 => SIGNIFICANT DIFFERENCE
+    original_glcm_DifferenceEntropy: raw p-value=2.0433e-23, corrected p-value=2.7584e-21 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_JointEntropy: raw p-value=1.0213e-07, corrected p-value=6.0259e-06 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_DifferenceEntropy: raw p-value=6.3510e-08, corrected p-value=4.0011e-06 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_ClusterShade: raw p-value=7.6392e-02, corrected p-value=5.3475e-01 => no significant difference
+    logarithm_glrlm_ShortRunHighGrayLevelEmphasis: raw p-value=1.8950e-54, corrected p-value=4.0931e-52 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_Autocorrelation: raw p-value=5.5069e-11, corrected p-value=4.5707e-09 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_Contrast: raw p-value=9.6427e-29, corrected p-value=1.4464e-26 => SIGNIFICANT DIFFERENCE
+    logarithm_glszm_HighGrayLevelZoneEmphasis: raw p-value=2.7171e-05, corrected p-value=9.5098e-04 => SIGNIFICANT DIFFERENCE
+    squareroot_gldm_LargeDependenceHighGrayLevelEmphasis: raw p-value=4.8059e-45, corrected p-value=9.6118e-43 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_DifferenceAverage: raw p-value=5.2384e-15, corrected p-value=5.3956e-13 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_Entropy: raw p-value=5.3206e-25, corrected p-value=7.3957e-23 => SIGNIFICANT DIFFERENCE
+    original_glcm_Contrast: raw p-value=2.1388e-31, corrected p-value=3.5076e-29 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_DifferenceVariance: raw p-value=1.6268e-28, corrected p-value=2.4239e-26 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_ClusterProminence: raw p-value=3.6750e-05, corrected p-value=1.2128e-03 => SIGNIFICANT DIFFERENCE
+    squareroot_firstorder_Mean: raw p-value=5.3071e-29, corrected p-value=8.0668e-27 => SIGNIFICANT DIFFERENCE
+    original_glcm_Idm: raw p-value=1.0458e-11, corrected p-value=9.3079e-10 => SIGNIFICANT DIFFERENCE
+    original_glszm_GrayLevelNonUniformityNormalized: raw p-value=1.7328e-43, corrected p-value=3.3962e-41 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_90Percentile: raw p-value=3.3845e-20, corrected p-value=4.2306e-18 => SIGNIFICANT DIFFERENCE
+    original_glcm_JointEnergy: raw p-value=3.5827e-15, corrected p-value=3.7618e-13 => SIGNIFICANT DIFFERENCE
+    original_glcm_Id: raw p-value=7.4978e-03, corrected p-value=1.0948e-01 => no significant difference
+    logarithm_glszm_GrayLevelVariance: raw p-value=5.0365e-06, corrected p-value=2.1657e-04 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_Contrast: raw p-value=2.1583e-05, corrected p-value=7.7701e-04 => SIGNIFICANT DIFFERENCE
+    original_gldm_HighGrayLevelEmphasis: raw p-value=7.6608e-09, corrected p-value=5.3625e-07 => SIGNIFICANT DIFFERENCE
+    original_glszm_GrayLevelVariance: raw p-value=1.2302e-29, corrected p-value=1.8945e-27 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_glcm_Imc2: raw p-value=1.1175e-08, corrected p-value=7.7110e-07 => SIGNIFICANT DIFFERENCE
+    squareroot_glrlm_GrayLevelNonUniformityNormalized: raw p-value=8.2157e-57, corrected p-value=1.8075e-54 => SIGNIFICANT DIFFERENCE
+    logarithm_glszm_SmallAreaHighGrayLevelEmphasis: raw p-value=5.3286e-12, corrected p-value=4.7958e-10 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_DifferenceVariance: raw p-value=1.6010e-02, corrected p-value=1.6010e-01 => no significant difference
+    original_shape_Sphericity: raw p-value=2.5801e-24, corrected p-value=3.5347e-22 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_ClusterProminence: raw p-value=2.9077e-31, corrected p-value=4.7396e-29 => SIGNIFICANT DIFFERENCE
+    squareroot_gldm_SmallDependenceHighGrayLevelEmphasis: raw p-value=2.7556e-07, corrected p-value=1.5707e-05 => SIGNIFICANT DIFFERENCE
+    original_glrlm_HighGrayLevelRunEmphasis: raw p-value=4.5873e-35, corrected p-value=7.9360e-33 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_DifferenceEntropy: raw p-value=4.2935e-04, corrected p-value=1.0773e-02 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_Imc1: raw p-value=1.4002e-39, corrected p-value=2.5624e-37 => SIGNIFICANT DIFFERENCE
+    original_glcm_SumAverage: raw p-value=2.5842e-17, corrected p-value=2.8427e-15 => SIGNIFICANT DIFFERENCE
+    original_glcm_JointAverage: raw p-value=8.1598e-02, corrected p-value=5.3475e-01 => no significant difference
+    squareroot_glszm_SmallAreaHighGrayLevelEmphasis: raw p-value=1.2167e-05, corrected p-value=4.6518e-04 => SIGNIFICANT DIFFERENCE
+    logarithm_gldm_SmallDependenceHighGrayLevelEmphasis: raw p-value=8.6140e-10, corrected p-value=6.3744e-08 => SIGNIFICANT DIFFERENCE
+    log-sigma-3-mm-3D_glszm_ZoneEntropy: raw p-value=9.7732e-06, corrected p-value=3.9093e-04 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_Kurtosis: raw p-value=8.1276e-61, corrected p-value=1.8450e-58 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_JointEnergy: raw p-value=1.1067e-18, corrected p-value=1.3059e-16 => SIGNIFICANT DIFFERENCE
+    original_glcm_DifferenceVariance: raw p-value=4.4652e-35, corrected p-value=7.7695e-33 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_MeanAbsoluteDeviation: raw p-value=1.5650e-10, corrected p-value=1.2207e-08 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_glcm_ClusterTendency: raw p-value=1.3526e-45, corrected p-value=2.7187e-43 => SIGNIFICANT DIFFERENCE
+    logarithm_gldm_DependenceEntropy: raw p-value=6.6669e-60, corrected p-value=1.4934e-57 => SIGNIFICANT DIFFERENCE
+    original_glrlm_ShortRunHighGrayLevelEmphasis: raw p-value=4.4541e-05, corrected p-value=1.4253e-03 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_JointEntropy: raw p-value=8.4151e-40, corrected p-value=1.5484e-37 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_SumAverage: raw p-value=1.0840e-42, corrected p-value=2.1137e-40 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_JointAverage: raw p-value=5.9380e-28, corrected p-value=8.7289e-26 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_Uniformity: raw p-value=9.6288e-07, corrected p-value=5.1033e-05 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glrlm_GrayLevelNonUniformityNormalized: raw p-value=1.6630e-04, corrected p-value=4.9890e-03 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_glcm_SumSquares: raw p-value=5.4687e-14, corrected p-value=5.4140e-12 => SIGNIFICANT DIFFERENCE
+    log-sigma-3-mm-3D_glcm_ClusterTendency: raw p-value=2.7270e-44, corrected p-value=5.3994e-42 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_Entropy: raw p-value=6.9427e-54, corrected p-value=1.4788e-51 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_Entropy: raw p-value=4.5648e-20, corrected p-value=5.6603e-18 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_glcm_SumEntropy: raw p-value=8.7766e-06, corrected p-value=3.5984e-04 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_InverseVariance: raw p-value=9.1874e-08, corrected p-value=5.5125e-06 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_gldm_DependenceEntropy: raw p-value=1.2917e-03, corrected p-value=2.5835e-02 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_InverseVariance: raw p-value=8.1134e-26, corrected p-value=1.1440e-23 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_Id: raw p-value=1.1669e-55, corrected p-value=2.5438e-53 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glrlm_RunEntropy: raw p-value=1.9641e-05, corrected p-value=7.2672e-04 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_ClusterShade: raw p-value=1.1971e-40, corrected p-value=2.2865e-38 => SIGNIFICANT DIFFERENCE
+    log-sigma-3-mm-3D_glcm_SumSquares: raw p-value=1.7596e-19, corrected p-value=2.1291e-17 => SIGNIFICANT DIFFERENCE
+    logarithm_glrlm_GrayLevelNonUniformityNormalized: raw p-value=1.8851e-34, corrected p-value=3.2235e-32 => SIGNIFICANT DIFFERENCE
+    log-sigma-3-mm-3D_glrlm_RunEntropy: raw p-value=1.6621e-10, corrected p-value=1.2799e-08 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_RootMeanSquared: raw p-value=3.5762e-29, corrected p-value=5.4715e-27 => SIGNIFICANT DIFFERENCE
+    logarithm_firstorder_Mean: raw p-value=7.6821e-31, corrected p-value=1.2445e-28 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_Idm: raw p-value=7.3839e-03, corrected p-value=1.0948e-01 => no significant difference
+    original_firstorder_RootMeanSquared: raw p-value=2.7455e-18, corrected p-value=3.1848e-16 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_Variance: raw p-value=4.2965e-33, corrected p-value=7.1751e-31 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_gldm_GrayLevelVariance: raw p-value=5.8618e-29, corrected p-value=8.8513e-27 => SIGNIFICANT DIFFERENCE
+    original_glszm_HighGrayLevelZoneEmphasis: raw p-value=2.2053e-01, corrected p-value=1.0000e+00 => no significant difference
+    squareroot_firstorder_Uniformity: raw p-value=5.2600e-33, corrected p-value=8.7316e-31 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_firstorder_Variance: raw p-value=1.5854e-03, corrected p-value=3.0123e-02 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_gldm_GrayLevelVariance: raw p-value=3.9049e-15, corrected p-value=4.0611e-13 => SIGNIFICANT DIFFERENCE
+    log-sigma-3-mm-3D_glcm_ClusterProminence: raw p-value=7.0673e-22, corrected p-value=9.3288e-20 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_MCC: raw p-value=2.1725e-03, corrected p-value=3.9104e-02 => SIGNIFICANT DIFFERENCE
+    exponential_firstorder_RootMeanSquared: raw p-value=1.7335e-12, corrected p-value=1.5948e-10 => SIGNIFICANT DIFFERENCE
+    exponential_firstorder_Mean: raw p-value=2.3361e-17, corrected p-value=2.5931e-15 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glszm_GrayLevelNonUniformityNormalized: raw p-value=6.1719e-01, corrected p-value=1.0000e+00 => no significant difference
+    wavelet2-LL_glcm_Idm: raw p-value=3.4829e-04, corrected p-value=9.4039e-03 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glcm_Id: raw p-value=2.8000e-06, corrected p-value=1.3160e-04 => SIGNIFICANT DIFFERENCE
+    original_glcm_InverseVariance: raw p-value=5.6261e-40, corrected p-value=1.0465e-37 => SIGNIFICANT DIFFERENCE
+    original_glrlm_LongRunHighGrayLevelEmphasis: raw p-value=6.4907e-08, corrected p-value=4.0011e-06 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glrlm_GrayLevelVariance: raw p-value=6.4063e-30, corrected p-value=9.9297e-28 => SIGNIFICANT DIFFERENCE
+    original_firstorder_Mean: raw p-value=2.5450e-30, corrected p-value=3.9956e-28 => SIGNIFICANT DIFFERENCE
+    wavelet-HL_glszm_ZoneEntropy: raw p-value=6.3263e-40, corrected p-value=1.1704e-37 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_firstorder_Entropy: raw p-value=1.1714e-02, corrected p-value=1.2885e-01 => no significant difference
+    original_gldm_SmallDependenceHighGrayLevelEmphasis: raw p-value=2.7455e-10, corrected p-value=2.0866e-08 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_glcm_ClusterProminence: raw p-value=3.2143e-41, corrected p-value=6.2036e-39 => SIGNIFICANT DIFFERENCE
+    log-sigma-0-6-mm-3D_glrlm_RunEntropy: raw p-value=3.3833e-18, corrected p-value=3.8231e-16 => SIGNIFICANT DIFFERENCE
+    original_glrlm_RunLengthNonUniformityNormalized: raw p-value=4.3235e-04, corrected p-value=1.0773e-02 => SIGNIFICANT DIFFERENCE
+    original_glrlm_ShortRunEmphasis: raw p-value=6.5127e-07, corrected p-value=3.5168e-05 => SIGNIFICANT DIFFERENCE
+    original_firstorder_Kurtosis: raw p-value=3.9259e-36, corrected p-value=7.0274e-34 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_gldm_HighGrayLevelEmphasis: raw p-value=9.3184e-65, corrected p-value=2.1805e-62 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_Id: raw p-value=3.0650e-01, corrected p-value=1.0000e+00 => no significant difference
+    wavelet2-LL_glrlm_LongRunHighGrayLevelEmphasis: raw p-value=2.8254e-14, corrected p-value=2.8536e-12 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_firstorder_Minimum: raw p-value=2.8832e-07, corrected p-value=1.6146e-05 => SIGNIFICANT DIFFERENCE
+    original_gldm_DependenceNonUniformityNormalized: raw p-value=2.2186e-01, corrected p-value=1.0000e+00 => no significant difference
+    log-sigma-3-mm-3D_glcm_SumEntropy: raw p-value=7.3811e-14, corrected p-value=7.1596e-12 => SIGNIFICANT DIFFERENCE
+    log-sigma-0-6-mm-3D_glszm_ZoneEntropy: raw p-value=1.8334e-11, corrected p-value=1.5767e-09 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glrlm_HighGrayLevelRunEmphasis: raw p-value=3.6988e-11, corrected p-value=3.1070e-09 => SIGNIFICANT DIFFERENCE
+    wavelet-HL_glcm_Imc2: raw p-value=6.3787e-14, corrected p-value=6.2511e-12 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_glrlm_GrayLevelVariance: raw p-value=2.9478e-13, corrected p-value=2.8004e-11 => SIGNIFICANT DIFFERENCE
+    original_glcm_Idmn: raw p-value=1.7476e-34, corrected p-value=3.0058e-32 => SIGNIFICANT DIFFERENCE
+    log-sigma-3-mm-3D_firstorder_Variance: raw p-value=1.9502e-26, corrected p-value=2.8082e-24 => SIGNIFICANT DIFFERENCE
+    log-sigma-3-mm-3D_gldm_GrayLevelVariance: raw p-value=2.5545e-18, corrected p-value=2.9888e-16 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_glrlm_RunEntropy: raw p-value=7.7515e-38, corrected p-value=1.4030e-35 => SIGNIFICANT DIFFERENCE
+    wavelet-HL_glrlm_RunEntropy: raw p-value=2.0240e-07, corrected p-value=1.1739e-05 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_glrlm_ShortRunHighGrayLevelEmphasis: raw p-value=8.7826e-37, corrected p-value=1.5809e-34 => SIGNIFICANT DIFFERENCE
+    logarithm_glcm_Idm: raw p-value=1.2137e-35, corrected p-value=2.1483e-33 => SIGNIFICANT DIFFERENCE
+    logarithm_glszm_LargeAreaHighGrayLevelEmphasis: raw p-value=2.5519e-21, corrected p-value=3.3175e-19 => SIGNIFICANT DIFFERENCE
+    original_glrlm_RunPercentage: raw p-value=3.8062e-08, corrected p-value=2.5501e-06 => SIGNIFICANT DIFFERENCE
+    wavelet2-HL_gldm_DependenceEntropy: raw p-value=5.7844e-11, corrected p-value=4.7432e-09 => SIGNIFICANT DIFFERENCE
+    log-sigma-0-6-mm-3D_glcm_Imc2: raw p-value=1.1958e-11, corrected p-value=1.0404e-09 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_ngtdm_Contrast: raw p-value=4.5148e-18, corrected p-value=5.0566e-16 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_firstorder_MeanAbsoluteDeviation: raw p-value=3.8601e-08, corrected p-value=2.5501e-06 => SIGNIFICANT DIFFERENCE
+    square_firstorder_10Percentile: raw p-value=2.2640e-09, corrected p-value=1.6301e-07 => SIGNIFICANT DIFFERENCE
+    log-sigma-2-mm-3D_glcm_JointEntropy: raw p-value=6.2164e-16, corrected p-value=6.6516e-14 => SIGNIFICANT DIFFERENCE
+    squareroot_glcm_JointEnergy: raw p-value=1.2542e-30, corrected p-value=1.9942e-28 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_Mean: raw p-value=4.8952e-34, corrected p-value=8.2240e-32 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_firstorder_Energy: raw p-value=8.7986e-04, corrected p-value=1.8477e-02 => SIGNIFICANT DIFFERENCE
+    wavelet2-HL_glrlm_RunEntropy: raw p-value=1.1709e-16, corrected p-value=1.2762e-14 => SIGNIFICANT DIFFERENCE
+    wavelet2-LL_gldm_LargeDependenceHighGrayLevelEmphasis: raw p-value=3.1015e-14, corrected p-value=3.1015e-12 => SIGNIFICANT DIFFERENCE
+    wavelet2-HL_glcm_SumEntropy: raw p-value=2.8662e-25, corrected p-value=4.0127e-23 => SIGNIFICANT DIFFERENCE
+    wavelet2-LH_glcm_Correlation: raw p-value=7.5024e-03, corrected p-value=1.0948e-01 => no significant difference
+
+ Total with significant difference: 223

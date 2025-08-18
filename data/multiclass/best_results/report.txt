@@ -1,0 +1,78 @@
+=== Model GradientBoosting fine-tuning ===
+
+Best parameters (according to roc_auc_ovr): OrderedDict([('gradientboostingclassifier__learning_rate', 0.009427878090264678), ('gradientboostingclassifier__max_depth', 2), ('gradientboostingclassifier__max_features', 'sqrt'), ('gradientboostingclassifier__n_estimators', 707), ('gradientboostingclassifier__subsample', 0.5)])
+
+=== CV Results (BayesSearch) ===
+  CV roc_auc_ovr: 0.883 +/- 0.011
+  CV f1: 0.497 +/- 0.042
+  CV balanced_accuracy: 0.476 +/- 0.035
+
+=== Test Evaluation (NOT calibrated) ===
+  Confusion Matrix Figure: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  AUC: 0.890
+  MCC: 0.522
+  Kappa: 0.510
+  F1: 0.483
+  Accuracy: 0.678
+  Recall: 0.469
+  Precision: 0.552
+  Balanced Accuracy: 0.469
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+         0.0       0.00      0.00      0.00        17
+         1.0       0.66      0.26      0.37       120
+         2.0       0.59      0.80      0.68       253
+         3.0       0.77      0.83      0.80       280
+         4.0       0.73      0.46      0.56        48
+
+    accuracy                           0.68       718
+   macro avg       0.55      0.47      0.48       718
+weighted avg       0.67      0.68      0.65       718
+
+
+=== Calibration Metrics ===
+  ECE  (pre):  0.033
+  ECE  (post): 0.038
+  Brier (pre): 1.196
+  Brier (post): 1.155
+
+=== Threshold Adjustment (Results with best threshold) ===
+Results for each threshold:
+  Threshold: 0.10 – F1 (macro): 0.107
+  Threshold: 0.20 – F1 (macro): 0.118
+  Threshold: 0.30 – F1 (macro): 0.116
+  Threshold: 0.40 – F1 (macro): 0.084
+  Threshold: 0.50 – F1 (macro): 0.029
+  Threshold: 0.60 – F1 (macro): 0.013
+  Threshold: 0.70 – F1 (macro): 0.009
+  Threshold: 0.80 – F1 (macro): 0.009
+  Threshold: 0.90 – F1 (macro): 0.009
+
+Best threshold selected (according to F1 macro): 0.20
+
+Classification Report (threshold=0.20):
+              precision    recall  f1-score   support
+
+         0.0       0.01      0.18      0.01        17
+         1.0       0.45      0.80      0.58       120
+         2.0       0.00      0.00      0.00       253
+         3.0       0.00      0.00      0.00       280
+         4.0       0.00      0.00      0.00        48
+
+    accuracy                           0.14       718
+   macro avg       0.09      0.20      0.12       718
+weighted avg       0.08      0.14      0.10       718
+
+ROC-AUC (ovr, macro): 0.891
+MCC: 0.134
+Kappa: 0.077
+F1 (macro): 0.118
+Precision (macro): 0.092
+Recall (macro): 0.195
+Accuracy: 0.138
+Balanced Accuracy: 0.195
+
+Confusion Matrix (Calibrated with threshold=0.20) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/features_t2w_multiclass/best_results/calibration/confusion_matrix_best_threshold.png
+

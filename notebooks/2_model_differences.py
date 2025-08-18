@@ -38,7 +38,7 @@ def main():
     - Si es significativo, ejecuta comparaciones post-hoc por pares
     - Genera visualizaciones de resultados
     """
-
+    print("Iniciando análisis estadístico de modelos...")
     # --- Configuración de argumentos de línea de comandos ---    
     parser = argparse.ArgumentParser(
         description="Comparación estadística de clasificadores (test global y post-hoc)."
@@ -178,6 +178,7 @@ def main():
     flierprops = dict(color='black')                      
     
     plt.figure(figsize=(8, 5))
+    print(pivot_df.head())
     pivot_df.boxplot(
         boxprops=boxprops,
         medianprops=medianprops,

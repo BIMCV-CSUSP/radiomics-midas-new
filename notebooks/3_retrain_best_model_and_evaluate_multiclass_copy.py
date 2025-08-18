@@ -57,6 +57,8 @@ from skopt import BayesSearchCV
 from skopt.space import Real, Integer, Categorical
 
 import joblib
+import shap
+from shap.maskers import Independent
 
 # Para análisis estadístico de valores SHAP
 from scipy.stats import mannwhitneyu
@@ -99,7 +101,7 @@ def perform_shap_analysis(X_data, y_data, model_clf, preprocessor, shap_dir, rep
                                     index=X_data.index,
                                     columns=selected_features)
         
-        # Seleccionar el explainer adecuado según el tipo de modelo
+        # # Seleccionar el explainer adecuado según el tipo de modelo
         # if isinstance(model_clf, (RandomForestClassifier, GradientBoostingClassifier)):
         #     # Para modelos basados en árboles
         #     explainer = shap.TreeExplainer(model_clf)
@@ -116,47 +118,54 @@ def perform_shap_analysis(X_data, y_data, model_clf, preprocessor, shap_dir, rep
         #     background = shap.kmeans(X_transformed, 50) # Resumen del dataset para acelerar
         #     explainer = shap.KernelExplainer(model_clf.predict_proba, background)
         
-        # explainer = shap.Explainer(model_clf, X_transformed)
-        explainer = shap.Explainer(
-            model_clf.predict_proba,    # ahora es un callable
-            X_transformed,              # datos de fondo para el "masker"
-            feature_names=selected_features,
-            output_names=[f"Clase {c}" for c in np.unique(y_data)]
-        )
-        # Calcular los valores SHAP
-        explainer_result = explainer(X_transformed)            # → Explanation obj
-        joblib.dump(explainer_result, os.path.join(shap_dir, 'shap_values.pkl'))
-        
-        all_vals = explainer_result.values   # shape = (n_samples, n_features, n_classes)
+        #prueba
+        classes = np.unique(y_data)
+        class_names = {i: f"Clase {c}" for i,c in enumerate(classes)}
+
+        import os, joblib
+
+        shap_cache = os.path.join(shap_dir, "shap_background_cache.pkl")
+
+        if os.path.exists(shap_cache):
+            # load previously‐computed explainer result
+            shap_result = joblib.load(shap_cache)
+            X_slice = shap_result.data
+        else:
+            # pick a small background to speed things up
+            background = X_transformed.sample(min(200, len(X_transformed)), random_state=42)
+
+            # build the explainer on predict_proba
+            explainer = shap.Explainer(
+                model_clf.predict_proba,      
+                masker=Independent(background),
+                feature_names=selected_features,
+                output_names=class_names       
+            )
+
+            # compute SHAP values (on a slice or on the whole)
+            X_slice = X_transformed 
+            shap_result = explainer(X_slice)    
+
+            # cache it
+            joblib.dump(shap_result, shap_cache)
+
+        # now you can immediately extract and plot:
+        all_vals = shap_result.values
         n_classes = all_vals.shape[2]
-        shap_values_class = [
-            all_vals[:, :, i] for i in range(n_classes)
-        ]
+        shap_values_class = [all_vals[:, :, i] for i in range(n_classes)]
 
-        # define your human labels for each class:
-        class_names={i: f"Clase {c}" for i,c in enumerate(np.unique(y_data))}
-        # e.g. {0: "Clase 1", 1: "Clase 2", ...}
-
-        # now call summary_plot over the entire 3-D array:
         shap.summary_plot(
-            all_vals,                     # the full (n_samples, n_features, n_classes) array
-            X_transformed,                # your feature matrix
+            all_vals,
+            X_slice,           # or X_transformed for full
             feature_names=selected_features,
-            class_names=class_names,      # map 0→"Clase 1", 1→"Clase 2", …
-            class_inds="original",        # show one beeswarm per class side by side
+            class_names=class_names,
+            class_inds="original",
             show=False
         )
-        plt.savefig(os.path.join(shap_dir, "shap_summary_multiclass.png"), bbox_inches="tight", dpi=300)
+        plt.savefig(os.path.join(shap_dir, "shap_summary_multiclass.png"),
+                    bbox_inches="tight", dpi=300)
         plt.close()
-        # # Para clasificación binaria, quedarse con los valores SHAP de la clase positiva
-        # if shap_values.values.ndim > 2:
-        #     shap_values = shap_values[:,:,1]
         
-        # shap_values = explainer.shap_values(X_test)  # Esto será una lista, uno por clase
-        # classes = label_encoder.inverse_transform(range(n_classes))
-        # shap.summary_plot(shap_values, X_test, class_names=classes)
-
-
         # --------------------------------------------------------------
         # PARTE 1: TEST ESTADÍSTICO entre valores SHAP y la clase
         # --------------------------------------------------------------
@@ -164,7 +173,6 @@ def perform_shap_analysis(X_data, y_data, model_clf, preprocessor, shap_dir, rep
 
         # Detectar clases únicas
         unique_classes = np.unique(y_data)
-        print(unique_classes)
         # Lista para guardar resultados por clase
         shap_stats_results = []
 
@@ -173,7 +181,7 @@ def perform_shap_analysis(X_data, y_data, model_clf, preprocessor, shap_dir, rep
             print(f"  > Procesando SHAP para la clase {class_idx}...")
 
             shap_matrix = pd.DataFrame(
-                class_shap_values.values,
+                class_shap_values,
                 index=X_transformed.index,
                 columns=X_transformed.columns
             )
@@ -335,7 +343,6 @@ def extraer_nombre(feat_str):
     if not valid_tokens:
         return feat_str.strip()
     return max(valid_tokens, key=len)
-
 
 def explain_lime_instance(
     X_data, 
@@ -889,12 +896,14 @@ def main():
     import joblib
 
     output_parent_dir = Path("../data/features_t2w_multiclass/best_results")
-    estimator_path     = output_parent_dir / "best_estimator.pkl"
+    estimator_path = output_parent_dir / "best_estimator.pkl"
+    search_path = output_parent_dir / "search_results.pkl"
 
-    # load the fitted pipeline
+    # Cargar ambos objetos
     best_estimator = joblib.load(estimator_path)
+    search = joblib.load(search_path)
 
-    # pull out only the GB parameters
+    # Ahora sí puedes acceder a todo
     gb_params = {
         k: v
         for k, v in best_estimator.get_params().items()
@@ -905,6 +914,20 @@ def main():
     print(" → Mejores parámetros:", gb_params)
     print(" → Mejor estimador cargado desde:", estimator_path)
 
+    # Ahora SÍ funciona el reporte
+    report_path = os.path.join(output_parent_dir, "report.txt")
+    with open(report_path, "w", encoding="utf-8") as f_out:
+        f_out.write(f"=== Fine-tuning del modelo {selected_model} ===\n\n")
+        f_out.write(f"Mejores parámetros (según {score_refit_str}): {gb_params}\n\n")
+        f_out.write("=== Resultados CV (BayesSearch) ===\n")
+
+        idx_best = search.best_index_
+        for key in score_group:
+            mean_test = search.cv_results_[f'mean_test_{key}'][idx_best]
+            std_test = search.cv_results_[f'std_test_{key}'][idx_best]
+            f_out.write(f"  CV {key}: {mean_test:.3f} +/- {std_test:.3f}\n")
+        f_out.write("\n")
+
 
     # # Ejecutar búsqueda de hiperparámetros
     # search.fit(X_train_full, y_train_full, groups=groups_train_full)
@@ -912,18 +935,18 @@ def main():
     # print("\nOptimización completada.")
     # print(f"  --> Mejores parámetros: {search.best_params_}")
 
-    # # Guardar el mejor modelo
+    # # # Guardar el mejor modelo
     # estimator_path = os.path.join(output_parent_dir, "best_estimator.pkl")
     # joblib.dump(best_estimator, estimator_path)
     # print(f"  --> Mejor estimador guardado en: {os.path.relpath(estimator_path)}")
 
-    # Alternativamente, cargar un modelo previamente guardado
+    # # Alternativamente, cargar un modelo previamente guardado
     # best_estimator = joblib.load(os.path.join(output_parent_dir, "best_estimator.pkl"))
     
     # ----------------------------------------------------------------------
     # 5) GUARDAR REPORTE EN "report.txt"
-    # ----------------------------------------------------------------------
-    report_path = os.path.join(output_parent_dir, "report.txt")
+    # # ----------------------------------------------------------------------
+    # report_path = os.path.join(output_parent_dir, "report.txt")
     # with open(report_path, "w", encoding="utf-8") as f_out:
     #     f_out.write(f"=== Fine-tuning del modelo {selected_model} ===\n\n")
     #     f_out.write(f"Mejores parámetros (según {score_refit_str}): {search.best_params_}\n\n")
@@ -935,6 +958,7 @@ def main():
     #         f_out.write(f"  CV {key}: {mean_test:.3f} +/- {std_test:.3f}\n")
     #     f_out.write("\n")
     
+
     # ----------------------------------------------------------------------
     # 6) EVALUAR EN TEST
     # ----------------------------------------------------------------------
@@ -1025,65 +1049,64 @@ def main():
     cal_clf.fit(X_train_full, y_train_full)
     
     # # --- Curva de calibración PRE (antes de calibrar) ---
-    # calibration_fig_pre = os.path.join(calibration_dir, "calibration_pre.png")
-    # fig, ax = plt.subplots(figsize=(8, 6))
-    # CalibrationDisplay.from_estimator(
-    #     best_estimator, 
-    #     X_test, 
-    #     y_test, 
-    #     n_bins=10, 
-    #     name=f"{selected_model}_pre", 
-    #     ax=ax
-    # )
+    calibration_fig_pre = os.path.join(calibration_dir, "calibration_pre.png")
+    fig, ax = plt.subplots(figsize=(8, 6))
+    CalibrationDisplay.from_estimator(
+        best_estimator, 
+        X_test, 
+        y_test, 
+        n_bins=10, 
+        name=f"{selected_model}_pre", 
+        ax=ax
+    )
 
-    # for line in ax.get_lines():
-    #     line.set_color("black")
+    for line in ax.get_lines():
+        line.set_color("black")
 
-    # legend = ax.get_legend()
-    # if legend:
-    #     for text in legend.get_texts():
-    #         text.set_color("black")
-    #     for line in legend.get_lines():
-    #         line.set_color("black")
-    #     for patch in legend.get_patches():
-    #         patch.set_edgecolor("black")
-    #         patch.set_facecolor("black")
+    legend = ax.get_legend()
+    if legend:
+        for text in legend.get_texts():
+            text.set_color("black")
+        for line in legend.get_lines():
+            line.set_color("black")
+        for patch in legend.get_patches():
+            patch.set_edgecolor("black")
+            patch.set_facecolor("black")
             
-    # # ax.set_title(f"Calibration Curve (pre), {selected_model}", fontsize=14)
-    # plt.savefig(calibration_fig_pre, dpi=dpi, bbox_inches='tight')
-    # plt.close()
-    # print(f"  --> Calibration curve (pre) guardada en: {calibration_fig_pre}")
+    # ax.set_title(f"Calibration Curve (pre), {selected_model}", fontsize=14)
+    plt.savefig(calibration_fig_pre, dpi=dpi, bbox_inches='tight')
+    plt.close()
+    print(f"  --> Calibration curve (pre) guardada en: {calibration_fig_pre}")
     
     # # --- Curva de calibración POST (después de calibrar) ---
-    # calibration_fig_post = os.path.join(calibration_dir, "calibration_post.png")
-    # fig, ax = plt.subplots(figsize=(8, 6))
-    # CalibrationDisplay.from_estimator(
-    #     cal_clf, 
-    #     X_test, 
-    #     y_test, 
-    #     n_bins=10, 
-    #     name=f"{selected_model}_post", 
-    #     ax=ax
-    # )
-    # # ax.set_title(f"Calibration Curve (post), {selected_model}", fontsize=14)
+    calibration_fig_post = os.path.join(calibration_dir, "calibration_post.png")
+    fig, ax = plt.subplots(figsize=(8, 6))
+    CalibrationDisplay.from_estimator(
+        cal_clf, 
+        X_test, 
+        y_test, 
+        n_bins=10, 
+        name=f"{selected_model}_post", 
+        ax=ax
+    )
+    # ax.set_title(f"Calibration Curve (post), {selected_model}", fontsize=14)
 
-    # for line in ax.get_lines():
-    #     line.set_color("black")
+    for line in ax.get_lines():
+        line.set_color("black")
 
-    # legend = ax.get_legend()
-    # if legend:
-    #     for text in legend.get_texts():
-    #         text.set_color("black")
-    #     for line in legend.get_lines():
-    #         line.set_color("black")
-    #     for patch in legend.get_patches():
-    #         patch.set_edgecolor("black")
-    #         patch.set_facecolor("black")
+    legend = ax.get_legend()
+    if legend:
+        for text in legend.get_texts():
+            text.set_color("black")
+        for line in legend.get_lines():
+            line.set_color("black")
+        for patch in legend.get_patches():
+            patch.set_edgecolor("black")
+            patch.set_facecolor("black")
             
-    # plt.savefig(calibration_fig_post, dpi=dpi, bbox_inches='tight')
-    # plt.close()
-    # print(f"  --> Calibration curve (post) guardada en: {calibration_fig_post}")
-    
+    plt.savefig(calibration_fig_post, dpi=dpi, bbox_inches='tight')
+    plt.close()
+    print(f"  --> Calibration curve (post) guardada en: {calibration_fig_post}")
     
     
     from sklearn.calibration import calibration_curve
@@ -1279,7 +1302,7 @@ def main():
     #     f_out.write(f"Sensitivity: {sens_best:.3f}\n")
     #     f_out.write(f"Specificity: {spec_best:.3f}\n")
     #     f_out.write(f"PPV: {ppv_best:.3f}\n")
-    #     f_out.write(f"NPV: {npv_best:.3f}\n")
+    #     f_out.write(f"NPV: {npv_best:.3f}\n")tr
     #     f_out.write(f"Balanced Accuracy: {balacc_best:.3f}\n\n")
 
 
