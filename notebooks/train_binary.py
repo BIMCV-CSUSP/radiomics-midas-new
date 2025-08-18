@@ -487,94 +487,94 @@ plt.savefig(corr_plot_path, dpi=dpi)
 print(f"  --> Saved correlation matrix: {corr_plot_path}\n")
     
     
-# # --- Model training and evaluation ---
-# models = get_models(random_state=42)
+# --- Model training and evaluation ---
+models = get_models(random_state=42)
 
-# # Collectors for results
-# all_results = []
-# preds_data = []
+# Collectors for results
+all_results = []
+preds_data = []
 
-# # Evaluate each model
-# for model_name, model in models:
-#     print(f"Evaluating {model_name}...")
-#     fold_metrics_list, pred_vals = evaluate_model(
-#         model, X, y, groups,
-#         n_splits=args.n_splits,
-#         n_repeats=args.n_repeats,
-#         base_random_state=42
-#     )
+# Evaluate each model
+for model_name, model in models:
+    print(f"Evaluating {model_name}...")
+    fold_metrics_list, pred_vals = evaluate_model(
+        model, X, y, groups,
+        n_splits=args.n_splits,
+        n_repeats=args.n_repeats,
+        base_random_state=42
+    )
 
-#     # Add classifier name to each result
-#     for fold_metrics in fold_metrics_list:
-#         fold_metrics["Classifier"] = model_name
-#         all_results.append(fold_metrics)
+    # Add classifier name to each result
+    for fold_metrics in fold_metrics_list:
+        fold_metrics["Classifier"] = model_name
+        all_results.append(fold_metrics)
 
-#     # Store predictions
-#     preds_data.append({
-#         "Classifier": model_name,
-#         "folds": pred_vals["folds"]
-#     })
+    # Store predictions
+    preds_data.append({
+        "Classifier": model_name,
+        "folds": pred_vals["folds"]
+    })
 
-# # Create DataFrame with all results
-# df_results = pd.DataFrame(all_results)
+# Create DataFrame with all results
+df_results = pd.DataFrame(all_results)
 
-# # Sort columns for better readability
-# fixed_cols = ["Classifier", "Fold", "Repeat"]
-# other_cols = [c for c in df_results.columns if c not in fixed_cols]
-# df_results = df_results[fixed_cols + other_cols]
-# df_results.sort_values(by=["Classifier", "Fold"], inplace=True)
+# Sort columns for better readability
+fixed_cols = ["Classifier", "Fold", "Repeat"]
+other_cols = [c for c in df_results.columns if c not in fixed_cols]
+df_results = df_results[fixed_cols + other_cols]
+df_results.sort_values(by=["Classifier", "Fold"], inplace=True)
 
-# # Generate filename for results
-# results_filename = f"results_lumbar_discs_label.csv"
-
-# # Save results
-# results_filepath = os.path.join(experiment_dir, results_filename)
-# df_results.to_csv(results_filepath, index=False)
-# print(f"\nResults saved at '{results_filepath}'")
-
-
-
-# # --- Structure prediction data for saving ---
-# records_for_csv = []
-# for item in preds_data:
-#     clf_name = item["Classifier"]
-#     folds_info = item["folds"]
-#     for fold_info in folds_info:
-#         fold_idx = fold_info["fold_index"]
-#         rep_idx = fold_info["Repeat"]
-        
-#         y_val_list = fold_info["y_val"].tolist()
-#         y_pred_list = fold_info["y_val_pred"].tolist()
-#         if fold_info["y_val_prob"] is not None:
-#             y_prob_list = fold_info["y_val_prob"].tolist()
-#         else:
-#             y_prob_list = []
-        
-#         records_for_csv.append({
-#             "Classifier": clf_name,
-#             "Fold": fold_idx,
-#             "Repeat": rep_idx,
-#             "y_val": y_val_list,
-#             "y_pred": y_pred_list,
-#             "y_prob": y_prob_list
-#         })
-
-# # Save predictions to CSV
-# df_preds = pd.DataFrame(records_for_csv)
-# preds_filename = f"preds_lumbar_discs_label.csv"
-# preds_filepath = os.path.join(experiment_dir, preds_filename)
-# df_preds.to_csv(preds_filepath, index=False)
-# print(f"Predictions saved at '{preds_filepath}'")
-
-
-# --- Ejecución de análisis adicionales (scripts complementarios) ---
+# Generate filename for results
 results_filename = f"results_lumbar_discs_label.csv"
-results_filepath = os.path.join(experiment_dir, results_filename)
-df_results = pd.read_csv(results_filepath)
 
+# Save results
+results_filepath = os.path.join(experiment_dir, results_filename)
+df_results.to_csv(results_filepath, index=False)
+print(f"\nResults saved at '{results_filepath}'")
+
+
+
+# --- Structure prediction data for saving ---
+records_for_csv = []
+for item in preds_data:
+    clf_name = item["Classifier"]
+    folds_info = item["folds"]
+    for fold_info in folds_info:
+        fold_idx = fold_info["fold_index"]
+        rep_idx = fold_info["Repeat"]
+        
+        y_val_list = fold_info["y_val"].tolist()
+        y_pred_list = fold_info["y_val_pred"].tolist()
+        if fold_info["y_val_prob"] is not None:
+            y_prob_list = fold_info["y_val_prob"].tolist()
+        else:
+            y_prob_list = []
+        
+        records_for_csv.append({
+            "Classifier": clf_name,
+            "Fold": fold_idx,
+            "Repeat": rep_idx,
+            "y_val": y_val_list,
+            "y_pred": y_pred_list,
+            "y_prob": y_prob_list
+        })
+
+# Save predictions to CSV
+df_preds = pd.DataFrame(records_for_csv)
 preds_filename = f"preds_lumbar_discs_label.csv"
 preds_filepath = os.path.join(experiment_dir, preds_filename)
-df_preds = pd.read_csv(preds_filepath)
+df_preds.to_csv(preds_filepath, index=False)
+print(f"Predictions saved at '{preds_filepath}'")
+
+
+# # --- Ejecución de análisis adicionales (scripts complementarios) ---
+# results_filename = f"results_lumbar_discs_label.csv"
+# results_filepath = os.path.join(experiment_dir, results_filename)
+# df_results = pd.read_csv(results_filepath)
+
+# preds_filename = f"preds_lumbar_discs_label.csv"
+# preds_filepath = os.path.join(experiment_dir, preds_filename)
+# df_preds = pd.read_csv(preds_filepath)
 
 
 # --- Save list of used variables ---
@@ -585,148 +585,148 @@ with open(variables_txt_path, "w") as f:
 print(f"File with used variables: {variables_txt_path}")
 
 
-# # --- ROC curves generation ---
-# print("\nGenerating ROC curves: optimal and median fold per classifier...")
+# --- ROC curves generation ---
+print("\nGenerating ROC curves: optimal and median fold per classifier...")
 
-# roc_dir = os.path.join(experiment_dir, f"ROC_curves")
-# os.makedirs(roc_dir, exist_ok=True)
+roc_dir = os.path.join(experiment_dir, f"ROC_curves")
+os.makedirs(roc_dir, exist_ok=True)
 
-# # Collectors for ROC curve information
-# curves_info_optimal = []  # For fold with best AUC of each model
-# curves_info_median = []   # For fold with median AUC of each model
+# Collectors for ROC curve information
+curves_info_optimal = []  # For fold with best AUC of each model
+curves_info_median = []   # For fold with median AUC of each model
 
-# # Process each classifier
-# classifiers = df_results["Classifier"].unique()
-# for clf_name in classifiers:
-#     df_clf = df_results[df_results["Classifier"] == clf_name]
+# Process each classifier
+classifiers = df_results["Classifier"].unique()
+for clf_name in classifiers:
+    df_clf = df_results[df_results["Classifier"] == clf_name]
     
-#     # --- Identify optimal fold (best AUC) ---
-#     best_fold_idx = df_clf["val_auc"].idxmax()
-#     best_fold_num = df_clf.loc[best_fold_idx, "Fold"]
+    # --- Identify optimal fold (best AUC) ---
+    best_fold_idx = df_clf["val_auc"].idxmax()
+    best_fold_num = df_clf.loc[best_fold_idx, "Fold"]
     
-#     # --- Identify median fold (AUC closest to median) ---
-#     median_auc = df_clf["val_auc"].median()
-#     median_fold_idx = (df_clf["val_auc"] - median_auc).abs().idxmin()
-#     median_fold_num = df_clf.loc[median_fold_idx, "Fold"]
+    # --- Identify median fold (AUC closest to median) ---
+    median_auc = df_clf["val_auc"].median()
+    median_fold_idx = (df_clf["val_auc"] - median_auc).abs().idxmin()
+    median_fold_num = df_clf.loc[median_fold_idx, "Fold"]
     
-#     # --- Process data for optimal fold ---
-#     df_clf_preds_best = df_preds[
-#         (df_preds["Classifier"] == clf_name) & 
-#         (df_preds["Fold"] == best_fold_num)
-#     ]
-#     if len(df_clf_preds_best) > 0:
-#         y_val_list_best = df_clf_preds_best.iloc[0]["y_val"]
-#         y_prob_list_best = df_clf_preds_best.iloc[0]["y_prob"]
-#         if y_prob_list_best:
-#             fpr_best, tpr_best, _ = metrics.roc_curve(y_val_list_best, y_prob_list_best, pos_label=1)
-#             auc_val_best = metrics.auc(fpr_best, tpr_best)
-#             curves_info_optimal.append({
-#                 "classifier": clf_name,
-#                 "fold": best_fold_num,
-#                 "fpr": fpr_best,
-#                 "tpr": tpr_best,
-#                 "auc": auc_val_best
-#             })
+    # --- Process data for optimal fold ---
+    df_clf_preds_best = df_preds[
+        (df_preds["Classifier"] == clf_name) & 
+        (df_preds["Fold"] == best_fold_num)
+    ]
+    if len(df_clf_preds_best) > 0:
+        y_val_list_best = df_clf_preds_best.iloc[0]["y_val"]
+        y_prob_list_best = df_clf_preds_best.iloc[0]["y_prob"]
+        if y_prob_list_best:
+            fpr_best, tpr_best, _ = metrics.roc_curve(y_val_list_best, y_prob_list_best, pos_label=1)
+            auc_val_best = metrics.auc(fpr_best, tpr_best)
+            curves_info_optimal.append({
+                "classifier": clf_name,
+                "fold": best_fold_num,
+                "fpr": fpr_best,
+                "tpr": tpr_best,
+                "auc": auc_val_best
+            })
     
-#     # --- Process data for median fold ---
-#     df_clf_preds_median = df_preds[
-#         (df_preds["Classifier"] == clf_name) & 
-#         (df_preds["Fold"] == median_fold_num)
-#     ]
-#     if len(df_clf_preds_median) > 0:
-#         y_val_list_median = df_clf_preds_median.iloc[0]["y_val"]
-#         y_prob_list_median = df_clf_preds_median.iloc[0]["y_prob"]
-#         if y_prob_list_median:
-#             fpr_median, tpr_median, _ = metrics.roc_curve(y_val_list_median, y_prob_list_median, pos_label=1)
-#             auc_val_median = metrics.auc(fpr_median, tpr_median)
-#             curves_info_median.append({
-#                 "classifier": clf_name,
-#                 "fold": median_fold_num,
-#                 "fpr": fpr_median,
-#                 "tpr": tpr_median,
-#                 "auc": auc_val_median
-#             })
+    # --- Process data for median fold ---
+    df_clf_preds_median = df_preds[
+        (df_preds["Classifier"] == clf_name) & 
+        (df_preds["Fold"] == median_fold_num)
+    ]
+    if len(df_clf_preds_median) > 0:
+        y_val_list_median = df_clf_preds_median.iloc[0]["y_val"]
+        y_prob_list_median = df_clf_preds_median.iloc[0]["y_prob"]
+        if y_prob_list_median:
+            fpr_median, tpr_median, _ = metrics.roc_curve(y_val_list_median, y_prob_list_median, pos_label=1)
+            auc_val_median = metrics.auc(fpr_median, tpr_median)
+            curves_info_median.append({
+                "classifier": clf_name,
+                "fold": median_fold_num,
+                "fpr": fpr_median,
+                "tpr": tpr_median,
+                "auc": auc_val_median
+            })
 
-# # Sort curves of each type by descending AUC (best performance first)
-# curves_info_optimal.sort(key=lambda x: x["auc"], reverse=True)
-# curves_info_median.sort(key=lambda x: x["auc"], reverse=True)
+# Sort curves of each type by descending AUC (best performance first)
+curves_info_optimal.sort(key=lambda x: x["auc"], reverse=True)
+curves_info_median.sort(key=lambda x: x["auc"], reverse=True)
 
-# # Define color palette for visual consistency between plots
-# my_colors = [
-#     "#0072B2",  # Dark blue
-#     "#009E73",  # Green
-#     "#D55E00",  # Reddish orange
-#     "#CC78BC",  # Purple
-#     "#DE8F05",  # Brown/orange
-#     "#56B4E9"   # Light blue
-# ]
+# Define color palette for visual consistency between plots
+my_colors = [
+    "#0072B2",  # Dark blue
+    "#009E73",  # Green
+    "#D55E00",  # Reddish orange
+    "#CC78BC",  # Purple
+    "#DE8F05",  # Brown/orange
+    "#56B4E9"   # Light blue
+]
 
-# my_palette = sns.color_palette(my_colors)
+my_palette = sns.color_palette(my_colors)
 
-# # Assign a specific color to each classifier
-# fixed_classifiers = ["SVM", "Logistic Regression", "Random Forest", 
-#                         "Naive Bayes", "KNN", "Gradient Boosting"]
-# color_mapping = {clf: my_palette[i] for i, clf in enumerate(fixed_classifiers)}
+# Assign a specific color to each classifier
+fixed_classifiers = ["SVM", "Logistic Regression", "Random Forest", 
+                        "Naive Bayes", "KNN", "Gradient Boosting"]
+color_mapping = {clf: my_palette[i] for i, clf in enumerate(fixed_classifiers)}
 
-# # --- Generate ROC plot for optimal folds ---
-# fig_opt, ax_opt = plt.subplots(figsize=(8, 6))
-# for info in curves_info_optimal:
-#     clf_name = info["classifier"]
-#     fold_num = info["fold"]
-#     fpr = info["fpr"]
-#     tpr = info["tpr"]
-#     auc_val = info["auc"]
-#     ax_opt.plot(fpr, tpr, label=f"{clf_name} (Fold={fold_num}, AUC={auc_val:.3f})", 
-#                 color=color_mapping[clf_name])
+# --- Generate ROC plot for optimal folds ---
+fig_opt, ax_opt = plt.subplots(figsize=(8, 6))
+for info in curves_info_optimal:
+    clf_name = info["classifier"]
+    fold_num = info["fold"]
+    fpr = info["fpr"]
+    tpr = info["tpr"]
+    auc_val = info["auc"]
+    ax_opt.plot(fpr, tpr, label=f"{clf_name} (Fold={fold_num}, AUC={auc_val:.3f})", 
+                color=color_mapping[clf_name])
 
-# # Add diagonal reference line (random classification)
-# ax_opt.plot([0, 1], [0, 1], linestyle='--', color='gray', label="_nolegend_")
-# ax_opt.set_xlabel("False Positive Rate", fontsize=12, labelpad=10)
-# ax_opt.set_ylabel("True Positive Rate", fontsize=12, labelpad=10)
-# ax_opt.tick_params(axis='both', which='major', labelsize=10)
-# ax_opt.legend(fontsize=10)
+# Add diagonal reference line (random classification)
+ax_opt.plot([0, 1], [0, 1], linestyle='--', color='gray', label="_nolegend_")
+ax_opt.set_xlabel("False Positive Rate", fontsize=12, labelpad=10)
+ax_opt.set_ylabel("True Positive Rate", fontsize=12, labelpad=10)
+ax_opt.tick_params(axis='both', which='major', labelsize=10)
+ax_opt.legend(fontsize=10)
 
-# # Improve legend appearance
-# leg = ax_opt.get_legend()
-# for line in leg.get_lines():
-#     line.set_linewidth(2.5)
-# fig_opt.tight_layout()
+# Improve legend appearance
+leg = ax_opt.get_legend()
+for line in leg.get_lines():
+    line.set_linewidth(2.5)
+fig_opt.tight_layout()
 
-# # Save plot
-# roc_plot_path_opt = os.path.join(roc_dir, "roc_optimal_folds.png")
-# plt.savefig(roc_plot_path_opt, dpi=dpi, bbox_inches='tight')
-# plt.close(fig_opt)
-# print(f"ROC plot (optimal fold) saved at: {roc_plot_path_opt}")
+# Save plot
+roc_plot_path_opt = os.path.join(roc_dir, "roc_optimal_folds.png")
+plt.savefig(roc_plot_path_opt, dpi=dpi, bbox_inches='tight')
+plt.close(fig_opt)
+print(f"ROC plot (optimal fold) saved at: {roc_plot_path_opt}")
 
-# # --- Generate ROC plot for median folds ---
-# fig_med, ax_med = plt.subplots(figsize=(8, 6))
-# for info in curves_info_median:
-#     clf_name = info["classifier"]
-#     fold_num = info["fold"]
-#     fpr = info["fpr"]
-#     tpr = info["tpr"]
-#     auc_val = info["auc"]
-#     ax_med.plot(fpr, tpr, label=f"{clf_name} (Fold={fold_num}, AUC={auc_val:.3f})", 
-#                 color=color_mapping[clf_name])
+# --- Generate ROC plot for median folds ---
+fig_med, ax_med = plt.subplots(figsize=(8, 6))
+for info in curves_info_median:
+    clf_name = info["classifier"]
+    fold_num = info["fold"]
+    fpr = info["fpr"]
+    tpr = info["tpr"]
+    auc_val = info["auc"]
+    ax_med.plot(fpr, tpr, label=f"{clf_name} (Fold={fold_num}, AUC={auc_val:.3f})", 
+                color=color_mapping[clf_name])
     
-# # Add diagonal reference line
-# ax_med.plot([0, 1], [0, 1], linestyle='--', color='gray', label="_nolegend_")
-# ax_med.set_xlabel("False Positive Rate", fontsize=12, labelpad=10)
-# ax_med.set_ylabel("True Positive Rate", fontsize=12, labelpad=10)
-# ax_med.tick_params(axis='both', which='major', labelsize=10)
-# ax_med.legend(fontsize=10)
+# Add diagonal reference line
+ax_med.plot([0, 1], [0, 1], linestyle='--', color='gray', label="_nolegend_")
+ax_med.set_xlabel("False Positive Rate", fontsize=12, labelpad=10)
+ax_med.set_ylabel("True Positive Rate", fontsize=12, labelpad=10)
+ax_med.tick_params(axis='both', which='major', labelsize=10)
+ax_med.legend(fontsize=10)
 
-# # Improve legend appearance
-# leg = ax_med.get_legend()
-# for line in leg.get_lines():
-#     line.set_linewidth(2.5)
-# fig_med.tight_layout()
+# Improve legend appearance
+leg = ax_med.get_legend()
+for line in leg.get_lines():
+    line.set_linewidth(2.5)
+fig_med.tight_layout()
 
-# # Save plot
-# roc_plot_path_med = os.path.join(roc_dir, "roc_median_folds.png")
-# plt.savefig(roc_plot_path_med, dpi=dpi, bbox_inches='tight')
-# plt.close(fig_med)
-# print(f"ROC plot (median fold) saved at: {roc_plot_path_med}")
+# Save plot
+roc_plot_path_med = os.path.join(roc_dir, "roc_median_folds.png")
+plt.savefig(roc_plot_path_med, dpi=dpi, bbox_inches='tight')
+plt.close(fig_med)
+print(f"ROC plot (median fold) saved at: {roc_plot_path_med}")
 
 
 
@@ -736,56 +736,58 @@ print(f"File with used variables: {variables_txt_path}")
 
 # Execute statistical model comparison script (optional)
 
-# print("\nExecuting model comparisons (model_differences.py)...")
-# import subprocess
+print("\nExecuting model comparisons (model_differences.py)...")
+import subprocess
 
-# model_diff_dir = os.path.join(experiment_dir, f"model_differences")
-# os.mkdir(model_diff_dir)
+model_diff_dir = os.path.join(experiment_dir, f"model_differences")
+os.mkdir(model_diff_dir)
 
-# # Build command for comparison script
-# postprocess_cmd = [
-#     "python3",
-#     "2_model_differences.py",
-#     "--csv_preds", preds_filepath,  # File with predictions
-#     "--csv_results", results_filepath,  # File with metrics
-#     "--metric", "val_auc",  # Metric to compare (AUC)
-#     "--alpha", "0.05",  # Significance level
-#     "--outdir", model_diff_dir  # Output directory
-# ]
+# Build command for comparison script
+postprocess_cmd = [
+    "python3",
+    "2_model_differences.py",
+    "--csv_preds", preds_filepath,  # File with predictions
+    "--csv_results", results_filepath,  # File with metrics
+    "--metric", "val_auc",  # Metric to compare (AUC)
+    "--alpha", "0.05",  # Significance level
+    "--outdir", model_diff_dir  # Output directory
+]
 
-# # Execute script as separate process
-# subprocess.call(postprocess_cmd)
+# Execute script as separate process
+subprocess.call(postprocess_cmd)
+
+if len(curves_info_optimal) > 0:
+
+    # Fine-tuning of best model (optional)
+    # Identify the best model (first in sorted list)
+    best_model = "Gradient Boosting"  # Default value
+    # best_model = curves_info_optimal[0]["classifier"]
 
 
+    # Name mapping for fine-tuning script
+    model_mapping = {
+        "SVM": "SVM",
+        "Logistic Regression": "LogisticRegression",
+        "Random Forest": "RandomForest",
+        "Naive Bayes": "NaiveBayes",
+        "KNN": "KNN",
+        "Gradient Boosting": "GradientBoosting"
+    }
+    best_model_finetune = model_mapping.get(best_model, best_model)
 
-# # Fine-tuning of best model (optional)
-# # Identify the best model (first in sorted list)
-# best_model = "Gradient Boosting"  # Default value
-# # best_model = curves_info_optimal[0]["classifier"]
+    print(f"Fine-tuning best model: {best_model_finetune}")
 
+    # Build command for fine-tuning script
+    fine_tune_cmd = [
+        "python3",
+        "3_retrain_best_model_and_evaluate.py",
+        "--csv", path_features,                  # Same feature CSV
+        "--model", best_model_finetune,     # Best identified model
+        "--variables", variables_txt_path   # Selected variables
+    ]
 
-# # Name mapping for fine-tuning script
-# model_mapping = {
-#     "SVM": "SVM",
-#     "Logistic Regression": "LogisticRegression",
-#     "Random Forest": "RandomForest",
-#     "Naive Bayes": "NaiveBayes",
-#     "KNN": "KNN",
-#     "Gradient Boosting": "GradientBoosting"
-# }
-# best_model_finetune = model_mapping.get(best_model, best_model)
-
-# print(f"Fine-tuning best model: {best_model_finetune}")
-
-# # Build command for fine-tuning script
-# fine_tune_cmd = [
-#     "python3",
-#     "3_retrain_best_model_and_evaluate.py",
-#     "--csv", path_features,                  # Same feature CSV
-#     "--model", best_model_finetune,     # Best identified model
-#     "--variables", variables_txt_path   # Selected variables
-# ]
-
-# subprocess.call(fine_tune_cmd)
+    subprocess.call(fine_tune_cmd)
 
     
+else:
+    print("No se encontró información de curvas óptimas para determinar el mejor modelo.")

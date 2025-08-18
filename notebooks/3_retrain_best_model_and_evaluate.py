@@ -1213,33 +1213,33 @@ def main():
         dataset_name="test"
     )
 
-    # Perform LIME analysis for training set
-    if train_success:
-        train_lime_success = perform_lime_analysis(
-            X_data=X_train_full,
-            y_data=y_train_full,
-            model_clf=model_clf,
-            preprocessor=preprocessor,
-            lime_dir=train_lime_dir,
-            selected_features=selected_features,
-            report_path=report_path,
-            # shap_top_features=train_top_features,
-            dataset_name="training"
-        )
+    # # Perform LIME analysis for training set
+    # if train_success:
+    #     train_lime_success = perform_lime_analysis(
+    #         X_data=X_train_full,
+    #         y_data=y_train_full,
+    #         model_clf=model_clf,
+    #         preprocessor=preprocessor,
+    #         lime_dir=train_lime_dir,
+    #         selected_features=selected_features,
+    #         report_path=report_path,
+    #         # shap_top_features=train_top_features,
+    #         dataset_name="training"
+    #     )
 
-    # Perform LIME analysis for test set
-    if test_success:
-        test_lime_success = perform_lime_analysis(
-            X_data=X_test,
-            y_data=y_test,
-            model_clf=model_clf,
-            preprocessor=preprocessor,
-            lime_dir=test_lime_dir,
-            selected_features=selected_features,
-            report_path=report_path,
-            # shap_top_features=test_top_features,
-            dataset_name="test"
-        )
+    # # Perform LIME analysis for test set
+    # if test_success:
+    #     test_lime_success = perform_lime_analysis(
+    #         X_data=X_test,
+    #         y_data=y_test,
+    #         model_clf=model_clf,
+    #         preprocessor=preprocessor,
+    #         lime_dir=test_lime_dir,
+    #         selected_features=selected_features,
+    #         report_path=report_path,
+    #         # shap_top_features=test_top_features,
+    #         dataset_name="test"
+    #     )
             
     print(f"\nProcess completed. Report saved at: {report_path}")
 
