@@ -8,7 +8,7 @@ Best parameters (according to roc_auc): OrderedDict([('gradientboostingclassifie
   CV balanced_accuracy: 0.879 +/- 0.007
 
 === Test Evaluation (NOT calibrated) ===
-  Confusion Matrix Figure: ../binary/best_results/confusion_matrix.png
+  Confusion Matrix Figure: ../results/binary/best_results/confusion_matrix.png
   AUC: 0.949
   MCC: 0.741
   Kappa: 0.741
@@ -72,5 +72,5 @@ PPV: 0.850
 NPV: 0.926
 Balanced Accuracy: 0.891
 
-Confusion Matrix (Calibrated with threshold=0.40) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/binary/best_results/calibration/confusion_matrix_best_threshold.png
+Confusion Matrix (Calibrated with threshold=0.40) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/binary/best_results/calibration/confusion_matrix_best_threshold.png
 

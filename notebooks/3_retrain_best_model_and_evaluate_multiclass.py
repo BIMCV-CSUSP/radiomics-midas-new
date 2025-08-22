@@ -311,68 +311,6 @@ def perform_shap_analysis(X_data, y_data, model_clf, preprocessor, shap_dir, rep
 
 
 
-        # # --------------------------------------------------------------
-        # # PART 2.1: HEATMAP
-        # # --------------------------------------------------------------
-        # print(f" - Generating Heatmap with samples ordered by class for {dataset_name}...")
-        # # Get indices ordered by class
-        # class_labels = np.unique(y_data)
-        # idx_order = np.concatenate([np.where(y_data == c)[0] for c in class_labels])
-        # class_positions = np.cumsum([len(np.where(y_data == c)[0]) for c in class_labels])
-
-        # for i, class_shap in enumerate(shap_values_class):
-        #     print(f" - Generating heatmap for Class {i}...")
-        #     heatmap_path = os.path.join(shap_dir, f"shap_heatmap_class_{i}.png")
-        #     heatmap_path2 = os.path.join(shap_dir, f"shap_heatmap_class_{i}.pdf")
-            
-        #     shap.plots.heatmap(
-        #         class_shap,
-        #         show=False,
-        #         instance_order=idx_order
-        #     )
-        #     fig = plt.gcf()
-        #     ax = plt.gca()
-            
-        #     # Draw dividing lines between classes
-        #     for split in class_positions[:-1]:
-        #         ax.axvline(split - 0.5, color='black', linewidth=1, zorder=10)
-
-        #     # Class labels
-        #     n_total = len(idx_order)
-        #     prev = 0
-        #     for c, split in zip(class_labels, class_positions):
-        #         midpoint = (prev + split) / 2 / n_total
-        #         ax.text(midpoint, 1.01, f'Class {c}', ha='center', va='bottom', transform=ax.transAxes)
-        #         prev = split
-
-        #     fig.set_size_inches(10, 6)
-        #     plt.tight_layout()
-        #     #SAVE ALL IMAGES IN PDF AND PNG FORMAT
-        #     plt.savefig(heatmap_path2, bbox_inches="tight", dpi=300)
-        #     plt.savefig(heatmap_path, dpi=300, bbox_inches='tight')
-        #     plt.close()
-
-        #     print(f"  --> Heatmap saved: {heatmap_path}")
-
-    
-        # --------------
-        # Beeswarm plot 
-        # # --------------
-        # for i, class_shap in enumerate(shap_values_class):
-        #     shap_fig_path = os.path.join(shap_dir, f"shap_beeswarm_class_{i}.png")
-        #     shap_fig_path2 = os.path.join(shap_dir, f"shap_beeswarm_class_{i}.pdf")
-
-        #     shap.plots.beeswarm(class_shap, max_display=16, show=False)
-        #     fig = plt.gcf()
-        #     fig.set_size_inches(14, 8)
-        #     plt.subplots_adjust(left=0.4, right=0.95)
-        #     plt.tight_layout()
-        #     plt.savefig(shap_fig_path, dpi=dpi, bbox_inches='tight')
-        #     plt.savefig(shap_fig_path2, bbox_inches="tight", dpi=300)
-        #     plt.close()
-        #     print(f"  --> Beeswarm plot saved: {shap_fig_path}")
-
-
         # --------------
         # NEW Beeswarm plot 
         # --------------
@@ -719,7 +657,7 @@ def main():
     print("\nStarting Bayesian optimization with BayesSearchCV...")
 
     # Paths
-    output_parent_dir = Path("../data/features_t2w_multiclass/best_results")
+    output_parent_dir = Path("../results/multiclass/best_results")
     estimator_path     = output_parent_dir / "best_estimator.pkl"
     search_path = output_parent_dir / "search_results.pkl"
 
@@ -729,6 +667,7 @@ def main():
 
     if search is None:
         # Configure Bayesian search
+        print("  --> No previous search results found, starting new optimization...")
         search = BayesSearchCV(
             estimator=pipe,
             search_spaces=param_grid,
@@ -796,29 +735,39 @@ def main():
     y_pred_test = best_estimator.predict(X_test)
 
     # Generate uncalibrated confusion matrix
-    confusion_fig = os.path.join(output_parent_dir, "confusion_matrix.png")
-    fig, ax = plt.subplots(figsize=(6, 5))
+    # --- Generate and save confusion matrix (Uncalibrated) ---
+    confusion_fig_png = os.path.join(output_parent_dir, "confusion_matrix.png")
+    confusion_fig_pdf = os.path.join(output_parent_dir, "confusion_matrix.pdf")
+
+    fig, ax = plt.subplots(figsize=(7, 6))
     ax.grid(False)
+
     disp = ConfusionMatrixDisplay.from_estimator(
-        best_estimator, 
-        X_test, 
-        y_test, 
-        ax=ax,         
-        cmap='cividis'
+        best_estimator,
+        X_test,
+        y_test,
+        ax=ax,
+        cmap='Blues',
+        colorbar=False
     )
-    # ax.set_title(f"{selected_model} (NOT calibrated)", fontsize=12)
 
     n_classes = len(disp.display_labels)
-
     ax.set_xticks(np.arange(-0.5, n_classes, 1), minor=True)
     ax.set_yticks(np.arange(-0.5, n_classes, 1), minor=True)
     ax.grid(which='minor', color='black', linestyle='--', linewidth=1)
     ax.tick_params(which='minor', bottom=False, left=False)
-    plt.tight_layout()
-    plt.savefig(confusion_fig, dpi=dpi, bbox_inches='tight')
-    plt.close()
 
-    print(f"Confusion matrix saved at: {confusion_fig}")
+    # Improve axis labels and title
+    ax.set_xlabel("Predicted label", fontsize=12)
+    ax.set_ylabel("True label", fontsize=12)
+
+    plt.tight_layout()
+    plt.savefig(confusion_fig_png, dpi=dpi, bbox_inches='tight')
+    plt.savefig(confusion_fig_pdf, dpi=dpi, bbox_inches='tight')
+    plt.close(fig)
+
+    print(f"Confusion matrix saved at: {confusion_fig_png}")
+    confusion_fig = confusion_fig_png  # for report
 
     # Calculate performance metrics on test (multiclass AUC)
     if hasattr(best_estimator, "predict_proba"):

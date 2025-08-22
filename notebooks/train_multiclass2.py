@@ -293,7 +293,7 @@ if __name__ == "__main__":
 
 
     # --- Data loading & preprocessing ---
-    path_features = '/mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/binary/features_t2w_MPfirrmann.csv'
+    path_features = '/mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/multiclass/features_t2w_MPfirrmann.csv'
     df = pd.read_csv(path_features)
     y = df["label"]
     groups = df["patient_id"]
@@ -318,7 +318,7 @@ if __name__ == "__main__":
                                 'diagnostics_Mask-interpolated_Mean', 'diagnostics_Mask-interpolated_Minimum', 
                                 'diagnostics_Mask-interpolated_Maximum'], axis=1)
 
-    experiment_dir = "/mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/features_t2w_multiclass"
+    experiment_dir = "/mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/multiclass"
     os.makedirs(experiment_dir, exist_ok=True)
     print(f"Created results folder: {experiment_dir}")
 
@@ -399,97 +399,97 @@ if __name__ == "__main__":
 
 
 
-    ##TRAIN AND EVALUATE MODELS
+    # ##TRAIN AND EVALUATE MODELS
 
-    #--- Model training & evaluation ---
-    models = get_models(random_state=42)
+    # #--- Model training & evaluation ---
+    # models = get_models(random_state=42)
 
-    # Collectors for results
-    all_results = []
-    preds_data = []
+    # # Collectors for results
+    # all_results = []
+    # preds_data = []
 
-    # Evaluate each model
-    for model_name, model in models:
-        print(f"Evaluating {model_name} ...")
-        fold_metrics_list, pred_vals = evaluate_model_multiclass(
-            model, X, y, groups,
-            n_splits=args.n_splits,
-            n_repeats=args.n_repeats,
-            base_random_state=42
-        )
+    # # Evaluate each model
+    # for model_name, model in models:
+    #     print(f"Evaluating {model_name} ...")
+    #     fold_metrics_list, pred_vals = evaluate_model_multiclass(
+    #         model, X, y, groups,
+    #         n_splits=args.n_splits,
+    #         n_repeats=args.n_repeats,
+    #         base_random_state=42
+    #     )
 
-        # Add classifier name to each result
-        for fold_metrics in fold_metrics_list:
-            fold_metrics["Classifier"] = model_name
-            all_results.append(fold_metrics)
+    #     # Add classifier name to each result
+    #     for fold_metrics in fold_metrics_list:
+    #         fold_metrics["Classifier"] = model_name
+    #         all_results.append(fold_metrics)
 
-        # Store predictions
-        preds_data.append({
-            "Classifier": model_name,
-            "folds": pred_vals["folds"]
-        })
+    #     # Store predictions
+    #     preds_data.append({
+    #         "Classifier": model_name,
+    #         "folds": pred_vals["folds"]
+    #     })
 
-    # DataFrame with all results
-    df_resultados = pd.DataFrame(all_results)
+    # # DataFrame with all results
+    # df_resultados = pd.DataFrame(all_results)
 
-    # Column ordering
-    fixed_cols = ["Classifier", "Fold", "Repeat"]
-    other_cols = [c for c in df_resultados.columns if c not in fixed_cols]
-    df_resultados = df_resultados[fixed_cols + other_cols]
-    df_resultados.sort_values(by=["Classifier", "Fold"], inplace=True)
+    # # Column ordering
+    # fixed_cols = ["Classifier", "Fold", "Repeat"]
+    # other_cols = [c for c in df_resultados.columns if c not in fixed_cols]
+    # df_resultados = df_resultados[fixed_cols + other_cols]
+    # df_resultados.sort_values(by=["Classifier", "Fold"], inplace=True)
 
-    # Results filename
-    resultados_filename = f"resultados_discoslumbar.csv"
+    # # Results filename
+    # resultados_filename = f"resultados_discoslumbar.csv"
 
-    # Save results
-    resultados_filepath = os.path.join(experiment_dir, resultados_filename)
-    df_resultados.to_csv(resultados_filepath, index=False)
-    print(f"\nResults saved at '{resultados_filepath}'")
+    # # Save results
+    # resultados_filepath = os.path.join(experiment_dir, resultados_filename)
+    # df_resultados.to_csv(resultados_filepath, index=False)
+    # print(f"\nResults saved at '{resultados_filepath}'")
 
 
-    # --- Structure prediction data for saving ---
-    records_for_csv = []
-    for item in preds_data:
-        clf_name = item["Classifier"]
-        folds_info = item["folds"]
-        for fold_info in folds_info:
-            fold_idx = fold_info["fold_index"]
-            rep_idx = fold_info["Repeat"]
+    # # --- Structure prediction data for saving ---
+    # records_for_csv = []
+    # for item in preds_data:
+    #     clf_name = item["Classifier"]
+    #     folds_info = item["folds"]
+    #     for fold_info in folds_info:
+    #         fold_idx = fold_info["fold_index"]
+    #         rep_idx = fold_info["Repeat"]
             
-            y_val_list = fold_info["y_val"].tolist()
-            y_pred_list = fold_info["y_val_pred"].tolist()
-            if fold_info["y_val_prob"] is not None:
-                y_prob_list = fold_info["y_val_prob"].tolist()
-            else:
-                y_prob_list = []
+    #         y_val_list = fold_info["y_val"].tolist()
+    #         y_pred_list = fold_info["y_val_pred"].tolist()
+    #         if fold_info["y_val_prob"] is not None:
+    #             y_prob_list = fold_info["y_val_prob"].tolist()
+    #         else:
+    #             y_prob_list = []
             
-            records_for_csv.append({
-                "Classifier": clf_name,
-                "Fold": fold_idx,
-                "Repeat": rep_idx,
-                "y_val": y_val_list,
-                "y_pred": y_pred_list,
-                "y_prob": y_prob_list
-            })
+    #         records_for_csv.append({
+    #             "Classifier": clf_name,
+    #             "Fold": fold_idx,
+    #             "Repeat": rep_idx,
+    #             "y_val": y_val_list,
+    #             "y_pred": y_pred_list,
+    #             "y_prob": y_prob_list
+    #         })
 
-    # Save predictions
-    df_preds = pd.DataFrame(records_for_csv)
-    preds_filename = f"preds_discoslumbar.csv"
-    preds_filepath = os.path.join(experiment_dir, preds_filename)
-    df_preds.to_csv(preds_filepath, index=False)
-    print(f"Predictions saved at '{preds_filepath}'")
+    # # Save predictions
+    # df_preds = pd.DataFrame(records_for_csv)
+    # preds_filename = f"preds_discoslumbar.csv"
+    # preds_filepath = os.path.join(experiment_dir, preds_filename)
+    # df_preds.to_csv(preds_filepath, index=False)
+    # print(f"Predictions saved at '{preds_filepath}'")
 
-    # --- Save list of used variables ---
-    variables_txt_path = os.path.join(experiment_dir, f"variables_used.txt")
-    with open(variables_txt_path, "w") as f:
-        for feat in selected_features:
-            f.write(str(feat) + "\n")
-    print(f"Variables file: {variables_txt_path}")
+    # # --- Save list of used variables ---
+    # variables_txt_path = os.path.join(experiment_dir, f"variables_used.txt")
+    # with open(variables_txt_path, "w") as f:
+    #     for feat in selected_features:
+    #         f.write(str(feat) + "\n")
+    # print(f"Variables file: {variables_txt_path}")
 
 
-    # --- Generate multiclass ROC curves (One-vs-Rest): optimal and median folds ---
-    print("\nGenerating multiclass ROC curves (One-vs-Rest): optimal and median fold per classifier ...")
-    experiment_dir = "/mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/features_t2w_multiclass"
+    # # --- Generate multiclass ROC curves (One-vs-Rest): optimal and median folds ---
+    # print("\nGenerating multiclass ROC curves (One-vs-Rest): optimal and median fold per classifier ...")
+    # experiment_dir = "/mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/features_t2w_multiclass"
 
 
     resultados_filename = f"resultados_discoslumbar.csv"
@@ -499,118 +499,118 @@ if __name__ == "__main__":
     preds_filename = f"preds_discoslumbar.csv"
     preds_filepath = os.path.join(experiment_dir, preds_filename)
 
-    df_preds = pd.read_csv(
-        preds_filepath,
-        converters={
-        'y_val': ast.literal_eval,
-        'y_prob': ast.literal_eval
-        }
-    )
+    # df_preds = pd.read_csv(
+    #     preds_filepath,
+    #     converters={
+    #     'y_val': ast.literal_eval,
+    #     'y_prob': ast.literal_eval
+    #     }
+    # )
 
 
-    roc_dir = os.path.join(experiment_dir, f"ROC_curves")
-    os.makedirs(roc_dir, exist_ok=True)
+    # roc_dir = os.path.join(experiment_dir, f"ROC_curves")
+    # os.makedirs(roc_dir, exist_ok=True)
 
-    curves_info_optimal = []
-    curves_info_median = []
+    # curves_info_optimal = []
+    # curves_info_median = []
 
-    classifiers = df_resultados["Classifier"].unique()
+    # classifiers = df_resultados["Classifier"].unique()
 
-    all_classes = np.unique(df_preds["y_val"].explode())  # all classes present
-    print(all_classes)
+    # all_classes = np.unique(df_preds["y_val"].explode())  # all classes present
+    # print(all_classes)
 
-    for clf_name in classifiers:
-        df_clf = df_resultados[df_resultados["Classifier"] == clf_name]
-        best_fold_idx = df_clf["val_auc"].idxmax()
-        best_fold_num = df_clf.loc[best_fold_idx, "Fold"]
-        median_auc = df_clf["val_auc"].median()
-        median_fold_idx = (df_clf["val_auc"] - median_auc).abs().idxmin()
-        median_fold_num = df_clf.loc[median_fold_idx, "Fold"]
+    # for clf_name in classifiers:
+    #     df_clf = df_resultados[df_resultados["Classifier"] == clf_name]
+    #     best_fold_idx = df_clf["val_auc"].idxmax()
+    #     best_fold_num = df_clf.loc[best_fold_idx, "Fold"]
+    #     median_auc = df_clf["val_auc"].median()
+    #     median_fold_idx = (df_clf["val_auc"] - median_auc).abs().idxmin()
+    #     median_fold_num = df_clf.loc[median_fold_idx, "Fold"]
 
-        # Optimal fold
-        df_clf_preds_best = df_preds[
-            (df_preds["Classifier"] == clf_name) & 
-            (df_preds["Fold"] == best_fold_num)
-        ]
-        if len(df_clf_preds_best) > 0:
-            y_val_list_best = df_clf_preds_best.iloc[0]["y_val"]
-            y_prob_list_best = df_clf_preds_best.iloc[0]["y_prob"]
-            if y_prob_list_best:
-                y_val_bin = label_binarize(y_val_list_best, classes=all_classes)
-                y_prob_arr = np.array(y_prob_list_best)
-                fpr_dict, tpr_dict, auc_dict = {}, {}, {}
-                for i, clase in enumerate(all_classes):
-                    fpr, tpr, _ = metrics.roc_curve(y_val_bin[:, i], y_prob_arr[:, i])
-                    auc_val = metrics.auc(fpr, tpr)
-                    fpr_dict[clase] = fpr
-                    tpr_dict[clase] = tpr
-                    auc_dict[clase] = auc_val
-                curves_info_optimal.append({
-                    "classifier": clf_name,
-                    "fold": best_fold_num,
-                    "fpr": fpr_dict,
-                    "tpr": tpr_dict,
-                    "auc": auc_dict
-                })
+    #     # Optimal fold
+    #     df_clf_preds_best = df_preds[
+    #         (df_preds["Classifier"] == clf_name) & 
+    #         (df_preds["Fold"] == best_fold_num)
+    #     ]
+    #     if len(df_clf_preds_best) > 0:
+    #         y_val_list_best = df_clf_preds_best.iloc[0]["y_val"]
+    #         y_prob_list_best = df_clf_preds_best.iloc[0]["y_prob"]
+    #         if y_prob_list_best:
+    #             y_val_bin = label_binarize(y_val_list_best, classes=all_classes)
+    #             y_prob_arr = np.array(y_prob_list_best)
+    #             fpr_dict, tpr_dict, auc_dict = {}, {}, {}
+    #             for i, clase in enumerate(all_classes):
+    #                 fpr, tpr, _ = metrics.roc_curve(y_val_bin[:, i], y_prob_arr[:, i])
+    #                 auc_val = metrics.auc(fpr, tpr)
+    #                 fpr_dict[clase] = fpr
+    #                 tpr_dict[clase] = tpr
+    #                 auc_dict[clase] = auc_val
+    #             curves_info_optimal.append({
+    #                 "classifier": clf_name,
+    #                 "fold": best_fold_num,
+    #                 "fpr": fpr_dict,
+    #                 "tpr": tpr_dict,
+    #                 "auc": auc_dict
+    #             })
 
-        # Median fold
-        df_clf_preds_median = df_preds[
-            (df_preds["Classifier"] == clf_name) & 
-            (df_preds["Fold"] == median_fold_num)
-        ]
-        if len(df_clf_preds_median) > 0:
-            y_val_list_median = df_clf_preds_median.iloc[0]["y_val"]
-            y_prob_list_median = df_clf_preds_median.iloc[0]["y_prob"]
-            if y_prob_list_median:
-                y_val_bin = label_binarize(y_val_list_median, classes=all_classes)
-                y_prob_arr = np.array(y_prob_list_median)
-                fpr_dict, tpr_dict, auc_dict = {}, {}, {}
-                for i, clase in enumerate(all_classes):
-                    fpr, tpr, _ = metrics.roc_curve(y_val_bin[:, i], y_prob_arr[:, i])
-                    auc_val = metrics.auc(fpr, tpr)
-                    fpr_dict[clase] = fpr
-                    tpr_dict[clase] = tpr
-                    auc_dict[clase] = auc_val
-                curves_info_median.append({
-                    "classifier": clf_name,
-                    "fold": median_fold_num,
-                    "fpr": fpr_dict,
-                    "tpr": tpr_dict,
-                    "auc": auc_dict
-                })
+    #     # Median fold
+    #     df_clf_preds_median = df_preds[
+    #         (df_preds["Classifier"] == clf_name) & 
+    #         (df_preds["Fold"] == median_fold_num)
+    #     ]
+    #     if len(df_clf_preds_median) > 0:
+    #         y_val_list_median = df_clf_preds_median.iloc[0]["y_val"]
+    #         y_prob_list_median = df_clf_preds_median.iloc[0]["y_prob"]
+    #         if y_prob_list_median:
+    #             y_val_bin = label_binarize(y_val_list_median, classes=all_classes)
+    #             y_prob_arr = np.array(y_prob_list_median)
+    #             fpr_dict, tpr_dict, auc_dict = {}, {}, {}
+    #             for i, clase in enumerate(all_classes):
+    #                 fpr, tpr, _ = metrics.roc_curve(y_val_bin[:, i], y_prob_arr[:, i])
+    #                 auc_val = metrics.auc(fpr, tpr)
+    #                 fpr_dict[clase] = fpr
+    #                 tpr_dict[clase] = tpr
+    #                 auc_dict[clase] = auc_val
+    #             curves_info_median.append({
+    #                 "classifier": clf_name,
+    #                 "fold": median_fold_num,
+    #                 "fpr": fpr_dict,
+    #                 "tpr": tpr_dict,
+    #                 "auc": auc_dict
+    #             })
 
-    # --- Plot multiclass ROC ---
+    # # --- Plot multiclass ROC ---
 
-    # Total number of curves = classifiers * classes
-    n_curvas = len(curves_info_optimal) * len(all_classes)
-    palette = sns.color_palette("tab20", n_colors=n_curvas)
+    # # Total number of curves = classifiers * classes
+    # n_curvas = len(curves_info_optimal) * len(all_classes)
+    # palette = sns.color_palette("tab20", n_colors=n_curvas)
 
-    for info, fname in zip([curves_info_optimal, curves_info_median], ["roc_optimal_folds_multiclass.png", "roc_median_folds_multiclass.png"]):
-        fig, ax = plt.subplots(figsize=(8, 6))
-        color_idx = 0
-        for clf_info in info:
-            clf_name = clf_info["classifier"]
-            fold_num = clf_info["fold"]
-            auc_dict = clf_info["auc"]
-            for clase in all_classes:
-                fpr = clf_info["fpr"][clase]
-                tpr = clf_info["tpr"][clase]
-                auc_val = auc_dict[clase]
-                color = palette[color_idx % len(palette)]
-                ax.plot(fpr, tpr, label=f"{clf_name} (Fold={fold_num}, Class={clase}, AUC={auc_val:.3f})", color=color)
-                color_idx += 1
-        ax.plot([0, 1], [0, 1], linestyle='--', color='gray', label="_nolegend_")
-        ax.set_xlabel("False Positive Rate", fontsize=12, labelpad=10)
-        ax.set_ylabel("True Positive Rate", fontsize=12, labelpad=10)
-        ax.tick_params(axis='both', which='major', labelsize=10)
-        ax.legend(fontsize=8)
-        fig.tight_layout()
-        # save pdf
-        plt.savefig(os.path.join(roc_dir, fname.replace(".png", ".pdf")), dpi=dpi, bbox_inches='tight')
-        # save png
-        plt.savefig(os.path.join(roc_dir, fname), dpi=dpi, bbox_inches='tight')
-        plt.close(fig)
-        print(f"Multiclass ROC plot saved at: {os.path.join(roc_dir, fname)}")
+    # for info, fname in zip([curves_info_optimal, curves_info_median], ["roc_optimal_folds_multiclass.png", "roc_median_folds_multiclass.png"]):
+    #     fig, ax = plt.subplots(figsize=(8, 6))
+    #     color_idx = 0
+    #     for clf_info in info:
+    #         clf_name = clf_info["classifier"]
+    #         fold_num = clf_info["fold"]
+    #         auc_dict = clf_info["auc"]
+    #         for clase in all_classes:
+    #             fpr = clf_info["fpr"][clase]
+    #             tpr = clf_info["tpr"][clase]
+    #             auc_val = auc_dict[clase]
+    #             color = palette[color_idx % len(palette)]
+    #             ax.plot(fpr, tpr, label=f"{clf_name} (Fold={fold_num}, Class={clase}, AUC={auc_val:.3f})", color=color)
+    #             color_idx += 1
+    #     ax.plot([0, 1], [0, 1], linestyle='--', color='gray', label="_nolegend_")
+    #     ax.set_xlabel("False Positive Rate", fontsize=12, labelpad=10)
+    #     ax.set_ylabel("True Positive Rate", fontsize=12, labelpad=10)
+    #     ax.tick_params(axis='both', which='major', labelsize=10)
+    #     ax.legend(fontsize=8)
+    #     fig.tight_layout()
+    #     # save pdf
+    #     plt.savefig(os.path.join(roc_dir, fname.replace(".png", ".pdf")), dpi=dpi, bbox_inches='tight')
+    #     # save png
+    #     plt.savefig(os.path.join(roc_dir, fname), dpi=dpi, bbox_inches='tight')
+    #     plt.close(fig)
+    #     print(f"Multiclass ROC plot saved at: {os.path.join(roc_dir, fname)}")
 
 
     # Mean validation AUC per classifier
@@ -649,34 +649,36 @@ if __name__ == "__main__":
 
 
     # Fine-tuning best model (optional)
-    if len(curves_info_optimal) > 0:
+    # if len(curves_info_optimal) > 0:
         # Identify best model (first in sorted list)
-        best_model = curves_info_optimal[0]["classifier"]
+        # best_model = curves_info_optimal[0]["classifier"]
+    best_model = "Gradient Boosting"  # Default value
 
-        # Name mapping for fine-tuning script
-        model_mapping = {
-            "SVM": "SVM",
-            "Logistic Regression": "LogisticRegression",
-            "Random Forest": "RandomForest",
-            "Naive Bayes": "NaiveBayes",
-            "KNN": "KNN",
-            "Gradient Boosting": "GradientBoosting"
-        }
-        best_model_finetune = model_mapping.get(best_model, best_model)
-        
-        print(f"Fine-tuning best model: {best_model_finetune}")
-        
-        # Build command for fine-tuning script
-        fine_tune_cmd = [
-            "python3",
-            "3_retrain_best_model_and_evaluate_multiclass.py",
-            "--csv", path_features,                  # Same features CSV
-            "--model", best_model_finetune,          # Identified best model
-            "--variables", variables_txt_path        # Selected variables
-        ]
-        
-        subprocess.call(fine_tune_cmd)
-    else:
-        print("No optimal curve information found to determine the best model.")
+
+    # Name mapping for fine-tuning script
+    model_mapping = {
+        "SVM": "SVM",
+        "Logistic Regression": "LogisticRegression",
+        "Random Forest": "RandomForest",
+        "Naive Bayes": "NaiveBayes",
+        "KNN": "KNN",
+        "Gradient Boosting": "GradientBoosting"
+    }
+    best_model_finetune = model_mapping.get(best_model, best_model)
+    
+    print(f"Fine-tuning best model: {best_model_finetune}")
+    
+    # Build command for fine-tuning script
+    fine_tune_cmd = [
+        "python3",
+        "3_retrain_best_model_and_evaluate_multiclass.py",
+        "--csv", path_features,                  # Same features CSV
+        "--model", best_model_finetune,          # Identified best model
+        "--variables", variables_txt_path        # Selected variables
+    ]
+    
+    subprocess.call(fine_tune_cmd)
+    # else:
+    #     print("No optimal curve information found to determine the best model.")
 
 

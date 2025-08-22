@@ -63,8 +63,6 @@ import joblib
 from scipy.stats import mannwhitneyu
 from statsmodels.stats.multitest import multipletests
 
-# label = number of disc
-# label = '5'
 
 def save_plot_both_formats(fig_path_base, dpi=300, bbox_inches='tight'):
     """
@@ -858,7 +856,7 @@ def main():
 
     # Paths
     from pathlib import Path
-    output_parent_dir = Path("../binary/best_results")
+    output_parent_dir = Path("../results/binary/best_results")
     estimator_path     = output_parent_dir / "best_estimator_binary.pkl"
     search_path = output_parent_dir / "search_results_binary.pkl"
     # activate when the bayesian search has been executed before
@@ -890,7 +888,7 @@ def main():
 
 
     # Execute hyperparameter search
-    search.fit(X_train_full, y_train_full, groups=groups_train_full)
+    # search.fit(X_train_full, y_train_full, groups=groups_train_full)
     best_estimator = search.best_estimator_
     print("\nOptimization completed.")
     print(f"  --> Best parameters: {search.best_params_}")
@@ -924,22 +922,24 @@ def main():
     # ----------------------------------------------------------------------
     # 6) EVALUATE ON TEST
     # ----------------------------------------------------------------------
-    print("\nEvaluating model on test set (uncalibrated)...")
+    print("\n[Evaluation] Uncalibrated test set performance...")
     y_pred_test = best_estimator.predict(X_test)
-    
-    # Generate confusion matrix without calibration
-    confusion_fig = os.path.join(output_parent_dir, "confusion_matrix.png")
+
+    # Paths for confusion matrix (PNG + PDF)
+    confusion_fig  = os.path.join(output_parent_dir, "confusion_matrix.png")
+    confusion_fig2 = os.path.join(output_parent_dir, "confusion_matrix.pdf")
+
+    # Confusion matrix (uncalibrated)
     fig, ax = plt.subplots(figsize=(6, 5))
     ax.grid(False)
     disp = ConfusionMatrixDisplay.from_estimator(
-        best_estimator, 
-        X_test, 
-        y_test, 
-        ax=ax,         
-        cmap='cividis'
+        estimator=best_estimator,
+        X=X_test,
+        y=y_test,
+        ax=ax,
+        cmap="Blues",
+        colorbar=False
     )
-    # ax.set_title(f"{selected_model} (NOT calibrated)", fontsize=12)
-    
     n_classes = len(disp.display_labels)
     
     ax.set_xticks(np.arange(-0.5, n_classes, 1), minor=True)
@@ -948,6 +948,8 @@ def main():
     ax.tick_params(which='minor', bottom=False, left=False)
     plt.tight_layout()
     plt.savefig(confusion_fig, dpi=dpi, bbox_inches='tight')
+    plt.savefig(confusion_fig2, dpi=dpi, bbox_inches='tight')
+    print(f"Confusion matrix saved at: {confusion_fig} and {confusion_fig2}")
     plt.close()
     print(f"Confusion matrix saved at: {confusion_fig}")
     

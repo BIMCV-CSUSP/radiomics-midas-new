@@ -8,7 +8,7 @@ Best parameters (according to roc_auc_ovr): OrderedDict([('gradientboostingclass
   CV balanced_accuracy: 0.476 +/- 0.035
 
 === Test Evaluation (NOT calibrated) ===
-  Confusion Matrix Figure: ../data/features_t2w_multiclass/best_results/confusion_matrix.png
+  Confusion Matrix Figure: ../results/multiclass/best_results/confusion_matrix.png
   AUC: 0.890
   MCC: 0.522
   Kappa: 0.510
@@ -74,5 +74,5 @@ Recall (macro): 0.195
 Accuracy: 0.138
 Balanced Accuracy: 0.195
 
-Confusion Matrix (Calibrated with threshold=0.20) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/features_t2w_multiclass/best_results/calibration/confusion_matrix_best_threshold.png
+Confusion Matrix (Calibrated with threshold=0.20) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/multiclass/best_results/calibration/confusion_matrix_best_threshold.png
 
