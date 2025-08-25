@@ -49,7 +49,7 @@ This repository contains code and resources for radiomics-based assessment of lu
 
 1) Feature extraction
 - Extract radiomics with [code/extract_radiomics.ipynb](code/extract_radiomics.ipynb).
-- Resulting CSVs are stored under [data/binary/](data/binary) and/or [data/multiclass/](data/multiclass).
+- Resulting CSVs are stored under [data/binary/feature_selection](data/binary/feature_selection) and/or [data/multiclass/feature_selection](data/multiclass/feature_selection) and [data/binary](data/binary) variables_used.txt
 
 2) Train and evaluate models
 - Binary:
@@ -74,8 +74,8 @@ This repository contains code and resources for radiomics-based assessment of lu
       - Boxplot: data/.../model_differences/boxplot_metric.png
       - P-value heatmap: data/.../model_differences/heatmap_pvalues.png
 
-  2.2) Retrain best model and explainability
-  This is call inside each train.py
+  2.2) Retrain best model and explainabilityç
+  - This is call inside each train.py
   - Binary: [code/3_retrain_best_model_and_evaluate.py](code/3_retrain_best_model_and_evaluate.py)
   - Multiclass: [code/3_retrain_best_model_and_evaluate_multiclass.py](code/3_retrain_best_model_and_evaluate_multiclass.py)
   - Saves:
