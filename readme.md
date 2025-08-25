@@ -83,6 +83,9 @@ This repository contains code and resources for radiomics-based assessment of lu
     - LIME explanations (pseudo-beeswarm and instance-level figures)
     - Reports under results/.../best_results/
 
+This is the workflow followed in this project:
+<img src="/mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/images_EDA/Flowchart.drawio (1).png" width="600" alt="Overall methodological workflow">
+
 ---
 
 ## Key Outputs
