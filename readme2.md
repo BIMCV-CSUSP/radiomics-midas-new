@@ -1,6 +1,6 @@
 ## Towards Computer-Aided Assessment of Lumbar Disc Degeneration Based on Radiomics
 
-This repository contains code and resources for radiomics-based assessment of lumbar disc degeneration (binary and multiclass Pfirrmann grading). It provides data preparation, exploratory analysis, feature extraction, model training/evaluation, statistical comparisons, and explainability (SHAP/LIME).
+This repository contains code and resources for radiomics-based assessment of lumbar disc degeneration (binary and multiclass Pfirrmann grading). It provides data preparation, exploratory analysis, feature extraction, model training/evaluation, statistical comparisons, and explainability (SHAP).
 
 - Python ≥ 3.11 (used in notebooks)
 - Main libraries: pandas, numpy, scikit-learn, matplotlib, seaborn, scipy, shap, lime, PyRadiomics (for feature extraction), SimpleITK, scikit-image
@@ -12,19 +12,15 @@ This repository contains code and resources for radiomics-based assessment of lu
 - [.gitignore](.gitignore)
 - [readme.md](readme.md) – This file (project overview, structure, how to run).
 - [src/](src)
-  - [Params.yaml](src/Params.yaml) – Optional configuration (paths/experiment params).
+  - [Params.yaml](src/Params.yaml) – Optional configuration (paths/experiment params) for radiomics.
 - [notebooks/](notebooks)
-  - EDA and processing
-    - [EDA_image.ipynb](notebooks/EDA_image.ipynb) – MRI size/spacing checks, sample visualizations.
-    - [EDA-variables.ipynb](notebooks/EDA-variables.ipynb) – Feature-level EDA (distributions, correlations).
-    - [Image_Pre_processing.ipynb](notebooks/Image_Pre_processing.ipynb) – Basic preprocessing pipeline for MRI and masks.
+  - Extraction radiomic features
     - [extract_radiomics.ipynb](notebooks/extract_radiomics.ipynb) – Radiomic feature extraction/merge (PyRadiomics).
-    - [extract_patients.ipynb](notebooks/extract_patients.ipynb) – Consolidates patient/session metadata from multiple CSVs/JSONs.
   - Training and evaluation
     - [train_binary.py](notebooks/train_binary.py) – Binary classification training/evaluation (cross-validation, ROC, outputs to data/binary).
-    - [train_multiclass2.py](notebooks/train_multiclass2.py) – Multiclass Pfirrmann training/evaluation (one-vs-rest ROC).
+    - [train_multiclass.py](notebooks/train_multiclass2.py) – Multiclass Pfirrmann training/evaluation (one-vs-rest ROC).
     - [2_model_differences.py](notebooks/2_model_differences.py) – Statistical comparison across classifiers; produces summary + boxplot + p-value heatmap.
-    - [3_retrain_best_model_and_evaluate.py](notebooks/3_retrain_best_model_and_evaluate.py) – Retrains best binary model; SHAP explainability and reports.
+    - [3_retrain_best_model_and_evaluate_binary.py](notebooks/3_retrain_best_model_and_evaluate.py) – Retrains best binary model; SHAP explainability and reports.
     - [3_retrain_best_model_and_evaluate_multiclass.py](notebooks/3_retrain_best_model_and_evaluate_multiclass.py) – Same for multiclass; per-class SHAP beeswarm/heatmaps
 - [data/](data)
   - Binary workflow outputs: [data/binary/](data/binary)
@@ -43,33 +39,19 @@ This repository contains code and resources for radiomics-based assessment of lu
     - [feature_selection/](data/multiclass/feature_selection) – Selection artifacts.
     - [ROC_curves/](data/multiclass/ROC_curves) – Multiclass ROC (OvR) plots.
     - [model_differences/](data/multiclass/model_differences) – Statistical comparisons.
-  - EDA inputs/derivatives: [data/datos_EDA/](data/datos_EDA)
-    - [EDA_image/](data/datos_EDA/EDA_image) -Exploratory Data Analysis : Image of dimensions and spacing information.
-- [images_EDA/](images_EDA)
-  - EDA visual assets: size/spacing plots, preprocessing diagrams, Pfirrmann distributions, and word clouds:
-    - image_preprocessing.(png|pdf), image_mask_example.(png|pdf), tamaño_t2w.(png|pdf), espaciado_t2w.(png|pdf)
-    - distribution_pfirrmann_grades_by_disc.(png|pdf), pfirrmann_per_disc_stacked_clean.(png|pdf)
-    - Wordclouds and top-20 descriptions around disc-level cohorts.
 - [results/](results)
-  - Aggregated “best_results” snapshots:
-    - [results/binary/best_results/](results/binary/best_results)
-    - [results/multiclass/best_results/](results/multiclass/best_results)
+    - [results/binary/best_results/](results/binary/best_results) SHAP plots and confusion matrix.
+    - [results/multiclass/best_results/](results/multiclass/best_results) Same for multiclass.
 
 ---
 
 ## Typical Workflow
 
-1) EDA and preprocessing (optional)
-- Inspect images and features with:
-  - [notebooks/EDA_image.ipynb](notebooks/EDA_image.ipynb)
-  - [notebooks/EDA-variables.ipynb](notebooks/EDA-variables.ipynb)
-  - [notebooks/Image_Pre_processing.ipynb](notebooks/Image_Pre_processing.ipynb)
-
-2) Feature extraction
+1) Feature extraction
 - Extract radiomics with [notebooks/extract_radiomics.ipynb](notebooks/extract_radiomics.ipynb).
 - Resulting CSVs are stored under [data/binary/](data/binary) and/or [data/multiclass/](data/multiclass).
 
-3) Train and evaluate models
+2) Train and evaluate models
 - Binary:
   - Run: `python notebooks/train_binary.py`
   - Outputs:
@@ -78,23 +60,22 @@ This repository contains code and resources for radiomics-based assessment of lu
     - ROC curves: [data/binary/ROC_curves/](data/binary/ROC_curves)
     - Selected features: [data/binary/variables_used.txt](data/binary/variables_used.txt)
 - Multiclass:
-  - Run: `python notebooks/train_multiclass2.py`
+  - Run: `python notebooks/train_multiclass.py`
   - Outputs:
     - Metrics: [data/multiclass/resultados_discoslumbar.csv](data/multiclass/resultados_discoslumbar.csv)
     - Predictions: [data/multiclass/preds_discoslumbar.csv](data/multiclass/preds_discoslumbar.csv)
     - ROC curves (OvR): [data/multiclass/ROC_curves/](data/multiclass/ROC_curves)
     - Selected features: [data/multiclass/variables_used.txt](data/multiclass/variables_used.txt)
 
-4) Statistical comparison across classifiers
-- Use [notebooks/2_model_differences.py](notebooks/2_model_differences.py):
-  - Example (multiclass):
-    - `python notebooks/2_model_differences.py --csv_results data/multiclass/resultados_discoslumbar.csv --csv_preds data/multiclass/preds_discoslumbar.csv --metric val_auc --alpha 0.05 --outdir data/multiclass/model_differences`
+2.1) Statistical comparison across classifiers
+- This is call inside each train.py [notebooks/2_model_differences.py](notebooks/2_model_differences.py):
   - Produces:
     - Summary text (global test + pairwise tests with Holm correction)
     - Boxplot: data/.../model_differences/boxplot_metric.png
     - P-value heatmap: data/.../model_differences/heatmap_pvalues.png
 
-5) Retrain best model and explainability
+2.2) Retrain best model and explainability
+This is call inside each train.py
 - Binary: [notebooks/3_retrain_best_model_and_evaluate.py](notebooks/3_retrain_best_model_and_evaluate.py)
 - Multiclass: [notebooks/3_retrain_best_model_and_evaluate_multiclass.py](notebooks/3_retrain_best_model_and_evaluate_multiclass.py)
 - Saves:

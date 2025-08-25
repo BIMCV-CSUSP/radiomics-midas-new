@@ -784,7 +784,7 @@ print(f"Fine-tuning best model: {best_model_finetune}")
 # Build command for fine-tuning script
 fine_tune_cmd = [
     "python3",
-    "3_retrain_best_model_and_evaluate.py",
+    "3_retrain_best_model_and_evaluate_binary.py",
     "--csv", path_features,                  # Same feature CSV
     "--model", best_model_finetune,     # Best identified model
     "--variables", variables_txt_path   # Selected variables
