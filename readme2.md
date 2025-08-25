@@ -1,4 +1,4 @@
-🧠 Towards Computer-Aided Assessment of Lumbar Disc Degeneration Based on Radiomics
+## Towards Computer-Aided Assessment of Lumbar Disc Degeneration Based on Radiomics
 
 This repository contains code and resources for radiomics-based assessment of lumbar disc degeneration (binary and multiclass Pfirrmann grading). It provides data preparation, exploratory analysis, feature extraction, model training/evaluation, statistical comparisons, and explainability (SHAP/LIME).
 
@@ -124,8 +124,7 @@ This repository contains code and resources for radiomics-based assessment of lu
   - Multiclass: [results/multiclass/explicability/train/SHAP/]
 ---
 
-
-📚 Citation
+## Citation
 
 If you use this repository, please cite:
 
