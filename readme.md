@@ -45,7 +45,7 @@ This repository contains code and resources for radiomics-based assessment of lu
 
 ---
 
-## Typical Workflow
+## Workflow
 
 1) Feature extraction
 - Extract radiomics with [code/extract_radiomics.ipynb](code/extract_radiomics.ipynb).
@@ -67,21 +67,21 @@ This repository contains code and resources for radiomics-based assessment of lu
     - ROC curves (OvR): [data/multiclass/ROC_curves/](data/multiclass/ROC_curves)
     - Selected features: [data/multiclass/variables_used.txt](data/multiclass/variables_used.txt)
 
-2.1) Statistical comparison across classifiers
-- This is call inside each train.py [code/2_model_differences.py](code/2_model_differences.py):
-  - Produces:
-    - Summary text (global test + pairwise tests with Holm correction)
-    - Boxplot: data/.../model_differences/boxplot_metric.png
-    - P-value heatmap: data/.../model_differences/heatmap_pvalues.png
+  2.1) Statistical comparison across classifiers
+  - This is call inside each train.py [code/2_model_differences.py](code/2_model_differences.py):
+    - Produces:
+      - Summary text (global test + pairwise tests with Holm correction)
+      - Boxplot: data/.../model_differences/boxplot_metric.png
+      - P-value heatmap: data/.../model_differences/heatmap_pvalues.png
 
-2.2) Retrain best model and explainability
-This is call inside each train.py
-- Binary: [code/3_retrain_best_model_and_evaluate.py](code/3_retrain_best_model_and_evaluate.py)
-- Multiclass: [code/3_retrain_best_model_and_evaluate_multiclass.py](code/3_retrain_best_model_and_evaluate_multiclass.py)
-- Saves:
-  - SHAP heatmaps/beeswarms per class
-  - LIME explanations (pseudo-beeswarm and instance-level figures)
-  - Reports under results/.../best_results/
+  2.2) Retrain best model and explainability
+  This is call inside each train.py
+  - Binary: [code/3_retrain_best_model_and_evaluate.py](code/3_retrain_best_model_and_evaluate.py)
+  - Multiclass: [code/3_retrain_best_model_and_evaluate_multiclass.py](code/3_retrain_best_model_and_evaluate_multiclass.py)
+  - Saves:
+    - SHAP heatmaps/beeswarms per class
+    - LIME explanations (pseudo-beeswarm and instance-level figures)
+    - Reports under results/.../best_results/
 
 ---
 
