@@ -1,6 +1,15 @@
 ## Towards Computer-Aided Assessment of Lumbar Disc Degeneration Based on Radiomics
 
-This repository contains code and resources for radiomics-based assessment of lumbar disc degeneration (binary and multiclass Pfirrmann grading). It provides data preparation, exploratory analysis, feature extraction, model training/evaluation, statistical comparisons, and explainability (SHAP).
+This repository provides code and resources for the development and evaluation of radiomics-based machine learning models to assist in the assessment of lumbar disc degeneration using MRI. The project focuses on the automated classification of lumbar intervertebral discs according to the Pfirrmann grading system, a widely used scale for evaluating disc degeneration.
+
+Two classification approaches are implemented:
+
+- **Binary Classification:** Intervertebral discs are grouped into two categories based on the Pfirrmann grade. Class 0 corresponds to discs with grades 1, 2, or 3 (representing normal to moderate degeneration), and Class 1 includes discs with grades 4 or 5 (representing severe degeneration). This binary approach is clinically relevant for distinguishing between non-severe and severe cases, and helps with decision-making for patient management.
+
+- **Multiclass Classification:** Each disc is assigned to one of the five Pfirrmann grades (1 to 5), enabling a more detailed assessment of degeneration severity. This approach enables detailed stratification and supports research into the progression and distribution of disc degeneration.
+
+The repository covers the complete workflow, including data preparation, exploratory analysis, radiomic feature extraction (using PyRadiomics), model training and evaluation, statistical comparison of classifiers, and model explainability using SHAP.
+
 
 - Python ≥ 3.11 (used in code)
 - Main libraries: pandas, numpy, scikit-learn, matplotlib, seaborn, scipy, shap, lime, PyRadiomics (for feature extraction), SimpleITK, scikit-image
