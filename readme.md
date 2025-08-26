@@ -14,6 +14,9 @@ The repository covers the complete workflow, including data preparation, explora
 - Python ≥ 3.11 (used in code)
 - Main libraries: pandas, numpy, scikit-learn, matplotlib, seaborn, scipy, shap, lime, PyRadiomics (for feature extraction), SimpleITK, scikit-image
 
+This is the workflow followed in this project:
+![Flowchart](<images_EDA/Flowchart.drawio.png>)
+
 ---
 
 ## Repository Structure
@@ -77,14 +80,14 @@ The repository covers the complete workflow, including data preparation, explora
     - Selected features: [data/multiclass/variables_used.txt](data/multiclass/variables_used.txt)
 
   2.1) Statistical comparison across classifiers
-  - This is call inside each train.py [code/2_model_differences.py](code/2_model_differences.py):
+  - This is called inside each train.py [code/2_model_differences.py](code/2_model_differences.py):
     - Produces:
       - Summary text (global test + pairwise tests with Holm correction)
       - Boxplot: data/.../model_differences/boxplot_metric.png
       - P-value heatmap: data/.../model_differences/heatmap_pvalues.png
 
-  2.2) Retrain best model and explainabilityç
-  - This is call inside each train.py
+  2.2) Retrain best model and explainability
+  - This is called inside each train.py
   - Binary: [code/3_retrain_best_model_and_evaluate.py](code/3_retrain_best_model_and_evaluate.py)
   - Multiclass: [code/3_retrain_best_model_and_evaluate_multiclass.py](code/3_retrain_best_model_and_evaluate_multiclass.py)
   - Saves:
@@ -92,8 +95,7 @@ The repository covers the complete workflow, including data preparation, explora
     - LIME explanations (pseudo-beeswarm and instance-level figures)
     - Reports under results/.../best_results/
 
-This is the workflow followed in this project:
-![Flowchart](<images_EDA/Flowchart.drawio.png>)
+
 
 ---
 
@@ -113,13 +115,13 @@ This is the workflow followed in this project:
   - Multiclass: [data/multiclass/model_differences/](data/multiclass/model_differences)
 - Selected features: variables_used.txt in each data modality folder.
 - Results SHAP Values:
-  - Binary: [results/binary/explicability/train/SHAP/]
-  - Multiclass: [results/multiclass/explicability/train/SHAP/]
+  - Binary: [results/binary/explicability/train/SHAP/](results/binary/explicability/train/SHAP/)
+  - Multiclass: [results/multiclass/explicability/train/SHAP/](results/multiclass/explicability/train/SHAP/)
 ---
 
 ## Citation
 
 If you use this repository, please cite:
 
-González Martínez, S., Alzate-Grisales, J. A., Montell Serrano, J., Francisco, J., Domenech, J., & de la Iglesia-Vayá, M. (2025). Towards Computer-Aided Assessment of Lumbar Disc Degeneration Based on Radiomics. Unidad Mixta de Imagen Biomédica e Inteligencia Artificial CIPF-FISABIO & Clínica Universidad de Navarra.
+González-Martínez, S., Alzate-Grisales, J.A., Montell-Serrano, J.A., Francisco, J., Domenech, J., & de la Iglesia-Vayá, M. (2025). Towards Computer-Aided Assessment of Lumbar Disc Degeneration Based on Radiomics. Unidad Mixta de Imagen Biomédica e Inteligencia Artificial CIPF-FISABIO & Clínica Universidad de Navarra.
 
