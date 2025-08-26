@@ -58,7 +58,7 @@ The repository covers the complete workflow, including data preparation, explora
 
 1) Feature extraction
 - Extract radiomics with [code/extract_radiomics.ipynb](code/extract_radiomics.ipynb).
-- Resulting CSVs are stored under [data/binary/feature_selection](data/binary/feature_selection) and/or [data/multiclass/feature_selection](data/multiclass/feature_selection) and [data/binary](data/binary) variables_used.txt
+- Resulting CSVs are stored under [data/binary/feature_selection](data/binary/feature_selection) and/or [data/multiclass/feature_selection](data/multiclass/feature_selection) and [data/binary/variables_used.txt](data/binary/variables_used.txt) and/or [data/multiclass/variables_used.txt](data/multiclass/variables_used.txt)
 
 2) Train and evaluate models
 - Binary:
