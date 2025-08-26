@@ -80,7 +80,8 @@ This is the workflow followed in this project:
     - Selected features: [data/multiclass/variables_used.txt](data/multiclass/variables_used.txt)
 
   2.1) Statistical comparison across classifiers
-  - This is called inside each train.py [code/2_model_differences.py](code/2_model_differences.py):
+  - This is called inside each train.py 
+  - [code/2_model_differences.py](code/2_model_differences.py):
     - Produces:
       - Summary text (global test + pairwise tests with Holm correction)
       - Boxplot: data/.../model_differences/boxplot_metric.png
