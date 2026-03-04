@@ -34,5 +34,3 @@ Contains the code and results for the initial machine learning experiments. Thes
 
 - second_results_ML
 Contains the updated and most robust machine learning experiments. This branch uses a newer, expanded dataset with a larger number of patients, specifically balancing the data by including more samples of Pfirrmann grades 1 and 5.
-
-🛠️ Getting Started
