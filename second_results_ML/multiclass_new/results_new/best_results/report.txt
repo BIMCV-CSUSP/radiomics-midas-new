@@ -1,0 +1,86 @@
+=== Model SVM fine-tuning ===
+
+Best parameters (according to roc_auc_ovr): OrderedDict([('svc__C', 2.3864461815503364), ('svc__coef0', 0.04279200574095499), ('svc__gamma', 0.003919799448715577), ('svc__kernel', 'rbf')])
+
+=== CV Results (BayesSearch) ===
+  CV roc_auc_ovr: 0.863 +/- 0.010
+  CV f1: 0.454 +/- 0.025
+  CV balanced_accuracy: 0.441 +/- 0.019
+
+=== Test Evaluation (NOT calibrated) ===
+  Confusion Matrix Figure: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/multiclass_new/results_new/best_results/confusion_matrix.png
+  AUC: 0.845
+  MCC: 0.395
+  Kappa: 0.388
+  F1: 0.416
+  Accuracy: 0.599
+  Recall: 0.407
+  Precision: 0.471
+  Balanced Accuracy: 0.407
+
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+           0       0.00      0.00      0.00        30
+           1       0.50      0.45      0.48       139
+           2       0.56      0.52      0.54       333
+           3       0.64      0.83      0.72       437
+           4       0.66      0.23      0.34        99
+
+    accuracy                           0.60      1038
+   macro avg       0.47      0.41      0.42      1038
+weighted avg       0.58      0.60      0.57      1038
+
+
+=== Calibration Metrics ===
+  ECE  (pre):  0.038
+  ECE  (post): 0.022
+  Brier (pre): 1.140
+  Brier (post): 1.004
+
+=== Threshold Adjustment (Results with best threshold) ===
+Results for each threshold:
+  Threshold: 0.10 – F1 (macro): 0.105
+  Threshold: 0.20 – F1 (macro): 0.112
+  Threshold: 0.30 – F1 (macro): 0.118
+  Threshold: 0.40 – F1 (macro): 0.103
+  Threshold: 0.50 – F1 (macro): 0.096
+  Threshold: 0.60 – F1 (macro): 0.080
+  Threshold: 0.70 – F1 (macro): 0.011
+  Threshold: 0.80 – F1 (macro): 0.011
+  Threshold: 0.90 – F1 (macro): 0.011
+
+Best threshold selected (according to F1 macro): 0.30
+
+Classification Report (threshold=0.30):
+              precision    recall  f1-score   support
+
+           0       0.02      0.50      0.04        30
+           1       0.45      0.73      0.55       139
+           2       0.00      0.00      0.00       333
+           3       0.00      0.00      0.00       437
+           4       0.00      0.00      0.00        99
+
+    accuracy                           0.11      1038
+   macro avg       0.09      0.25      0.12      1038
+weighted avg       0.06      0.11      0.08      1038
+
+ROC-AUC (ovr, macro): 0.809
+MCC: 0.124
+Kappa: 0.063
+F1 (macro): 0.118
+Precision (macro): 0.093
+Recall (macro): 0.245
+Accuracy: 0.112
+Balanced Accuracy: 0.245
+
+Confusion Matrix (Calibrated with threshold=0.30) fig: /mnt/datalake/openmind/MedP-Midas/sgonzalez/radiomics-midas-new/data/multiclass_new/best_results/calibration/confusion_matrix_best_threshold.png
+
+=== SHAP Analysis (training) ===
+ Could not generate SHAP (unsupported model or error):
+  ValueError('max_evals=500 is too low for the Permutation explainer, it must be at least 2 * num_features + 1 = 693!')
+
+=== SHAP Analysis (test) ===
+ Could not generate SHAP (unsupported model or error):
+  ValueError('max_evals=500 is too low for the Permutation explainer, it must be at least 2 * num_features + 1 = 693!')
+
