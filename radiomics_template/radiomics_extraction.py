@@ -123,7 +123,7 @@ def calculate_optimal_bin_width(df, modality, nb_bins=64):
     # Usamos una muestra de hasta 20 imágenes para no ralentizar demasiado el inicio
     sample_size = min(len(df), 20)
     sample_df = df.sample(sample_size)
-
+    print(f"Processing sample of size {sample_size} for modality {modality}")
     for _, row in sample_df.iterrows():
         try:
             img_path = row[modality]
