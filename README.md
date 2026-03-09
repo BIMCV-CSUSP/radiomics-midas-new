@@ -51,12 +51,14 @@ The extraction pipeline utilizes a ProcessPoolExecutor to process patients seque
 5. Feature Extraction (PyRadiomics): Extracts IBSI-compliant features (excluding diagnostic features) based on the user's execution parameters.
 
 ## Execution
-python /path/to/script/radiomics_extraction.py \
-  --input_csv /complete/path/to/data.csv \
-  --extraction_mode both \
-  --mask_label 1 \
-  --plane 2
 
+```bash
+python /path/to/script/radiomics_extraction.py \
+    --input_csv       /complete/path/to/data.csv \
+    --extraction_mode both                      \
+    --mask_label      1                         \
+    --plane           2
+```
 
   Arguments:
 
@@ -67,12 +69,3 @@ python /path/to/script/radiomics_extraction.py \
   - --mask_label: Specifies the integer label in the mask from which to extract features (Default: 1).
 
   - --plane: Forces 2D extraction (essential for clinical MRI). Options: 0 (Axial), 1 (Coronal), 2 (Sagittal).
-## Outputs
-After a successful extraction run, the following structure will be created inside the directory of your original input CSV:
-
-/input_csv_directory/ 
-└── radiomic_results/ 
-    ├── features_T2_mask_1.csv 
-    ├── features_T2_full_1.csv 
-    └── ...
-
