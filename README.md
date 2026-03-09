@@ -3,7 +3,7 @@ This repository contains an end-to-end machine learning pipeline for the automat
 
 The project workflow goes from raw medical images to a fully trained, statistically validated, and explainable machine learning model.
 
-¡EACH PART OF THE PROJECT IS IN ONE DIFFERENT BRANCH!
+¡EACH PART OF THE PROJECT IS IN A DIFFERENT BRANCH!
 
 ## 1. Project Pipeline
 The methodology is divided into three sequential stages:
