@@ -14,7 +14,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.pipeline import make_pipeline
 
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, LassoCV
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
@@ -305,168 +305,351 @@ if __name__ == "__main__":
     fs_dir = os.path.join(experiment_dir, "feature_selection")
     df_path_1 = os.path.join(fs_dir, "train_auc_pvals_df.csv")
 
+    # # ==============================================================================
+    # # Bloque 2: Selección de Características (Feature Selection) 
+    # # ==============================================================================
+    
+    # # --- 2. Cleaning (Avoid Leakage) ---
+    # df = pd.read_csv(args.csv)
+    # y = df["label"].values
+    # groups = df["patient_id"].values
+    # # Identificar columnas a eliminar (Leakage Prevention)
+    # cols_to_drop = ['id_igtp','patient_id', 'study_id', 'label', 'mask_type','SSA_type']
+    # X = df.drop(columns=[c for c in cols_to_drop if c in df.columns], errors='ignore')
+    # # Eliminar columnas de diagnóstico (metadatos de radiómica)
+    # X = X.drop(columns=[c for c in X.columns if 'diagnostics' in c], errors='ignore')
+
+    # # --- Feature selection ---
+    # selected_features = X.columns
+    # if os.path.exists(df_path_1):
+    #     print(f">> Cargando selección de variables existente desde: {df_path_1}")
+    #     train_auc_pvals_df = pd.read_csv(df_path_1, index_col=0)
+    #     # Seleccionar las N mejores basadas en el rendimiento del archivo cargado
+    #     num_features_model = round(X.shape[0]/10)
+    #     selected_features = train_auc_pvals_df.index[0:num_features_model].tolist()
+    #     X = X[selected_features]
+    # else:
+    #     print(">> No se encontró análisis previo. Iniciando selección de características...")
+    #     os.makedirs(fs_dir, exist_ok=True)
+    #     images_dir = os.path.join(fs_dir, "images")
+    #     os.makedirs(images_dir, exist_ok=True)
+
+    #     # Initialize lists to store statistics per feature
+    #     feature_names, sensitivity_list, specificity_list = ([] for _ in range(3))
+    #     auc_list, threshold_list, test_type_list, pvalue_list, pos_vs_neg_list = ([] for _ in range(5))
+        
+    #     # Evaluate each feature individually
+    #     for column in X.columns:
+    #         # Shapiro-Wilk normality test
+    #         stat, p = shapiro(X[column])
+            
+    #         # Get distributions by class
+    #         a_dist = X[column][y == 0]  # Class 0
+    #         b_dist = X[column][y == 1]  # Class 1
+            
+    #         feature_names.append(column)
+            
+    #         # Select statistical test according to normality
+    #         alpha = 0.05
+    #         if p > alpha: # If p > 0.05, assume normality
+    #             test_type_list.append('t-test')
+    #             _, pval = ttest_ind(a_dist, b_dist) # T-test for normal data
+    #         else:
+    #             test_type_list.append('mann-whitney U-test')
+    #             _, pval = mannwhitneyu(a_dist, b_dist) # Non-parametric test
+    #         pvalue_list.append(pval)
+            
+    #         # Evaluate discriminative capacity (AUC)
+    #         fpr, tpr, thresholds = metrics.roc_curve(y, X[column], pos_label=1)
+    #         auc_val = metrics.auc(fpr, tpr)
+
+    #         # If AUC < 0.5, invert the relationship (greater/lesser)
+    #         pos_vs_neg = ">" 
+    #         if auc_val < 0.5:
+    #             fpr, tpr, thresholds = metrics.roc_curve(y, X[column], pos_label=0)
+    #             auc_val = metrics.auc(fpr, tpr)
+    #             pos_vs_neg = "<"
+    #         auc_list.append(auc_val)
+    #         pos_vs_neg_list.append(pos_vs_neg)
+            
+    #         # Find optimal point in ROC curve (Youden's J index)
+    #         roc_df = pd.DataFrame({
+    #             'fpr': fpr,
+    #             'tpr': tpr,
+    #             '1-fpr': 1 - fpr,
+    #             'tf': tpr - (1 - fpr),   # Youden's J = Sensitivity + Specificity - 1
+    #             'thresholds': thresholds
+    #         })
+    #         cutoff_df = roc_df.iloc[(roc_df.tf - 0).abs().argsort()[:1]] # Closest point to optimal
+            
+    #         # Save sensitivity, specificity and optimal threshold
+    #         sensitivity_list.append(cutoff_df['tpr'].values[0])
+    #         specificity_list.append(cutoff_df['1-fpr'].values[0])
+    #         threshold_list.append(cutoff_df['thresholds'].values[0])
+        
+    #     # Create DataFrame with all statistics per feature
+    #     train_auc_pvals_df = pd.DataFrame(
+    #         list(zip(auc_list, pos_vs_neg_list, threshold_list,
+    #                     sensitivity_list, specificity_list, 
+    #                     test_type_list, pvalue_list)),
+    #         index=feature_names,
+    #         columns=['AUC', 'Pos.vs.Neg.', 'Cutoff-Threshold', 'Sensitivity',
+    #                     'Specificity', 'Test', 'p-value']
+    #     ).sort_values(by='p-value', ascending=True) #
+
+    #     df_path_raw = os.path.join(fs_dir, "ranking_puro_sin_correlacion.csv")
+    #     train_auc_pvals_df.to_csv(df_path_raw)
+    #     print(f"  --> Guardado ranking inicial (sin filtro): {df_path_raw}")
+
+    #     # --- FILTRO DE REDUNDANCIA (CORRELACIÓN) ---
+    #     print("  --> Eliminando características redundantes (Spearman > 0.85)...")
+    #     X_sorted = X[train_auc_pvals_df.index]
+    #     corr_matrix = X_sorted.corr(method='spearman').abs()
+
+    #     to_drop = set()
+    #     for i in range(len(corr_matrix.columns)):
+    #         for j in range(i):
+    #             if corr_matrix.iloc[i, j] > 0.85:
+    #                 colname = corr_matrix.columns[i]
+    #                 to_drop.add(colname)
+
+    #     # Aplicar limpieza
+    #     train_df_filtered = train_auc_pvals_df.drop(index=list(to_drop))
+    #     print(f"  --> {len(to_drop)} variables eliminadas por alta correlación.")
+
+
+    #     # Select features: maximum 1 feature per 15 samples
+    #     num_features_model = round(X.shape[0]/10)
+    #     train_df = train_df_filtered.sort_values(by='p-value', ascending=True)
+
+    #     # Select the N most significant features
+    #     selected_features = train_df.index[0:num_features_model]
+    #     print(f"  --> Selected {len(selected_features)} most relevant features.")
+
+    #     # Filter DataFrame to use only selected features
+    #     X = X[selected_features]
+    #     # Save DataFrame with complete statistics
+    #     df_path_1 = os.path.join(fs_dir, f"train_auc_pvals_df.csv")
+    #     train_df_filtered.loc[selected_features].to_csv(df_path_1)
+    #     print(f"  --> Saved CSV: {df_path_1}\n")
+
+    #     top_20 = train_df_filtered.index[:20]
+
+
+    #     for rank, feature_name in enumerate(top_20, start=1):
+    #         # Create filename
+    #         safe_feat_name = feature_name.replace("/", "_")
+    #         feat_folder_name = f"{rank}_{safe_feat_name}"
+    #         feat_folder_path = os.path.join(images_dir, feat_folder_name)
+    #         os.mkdir(feat_folder_path)
+            
+    #         # 1. Violin plot to visualize distributions by class
+    #         plt.figure(figsize=(9, 9))
+    #         sns.violinplot(x=y, y=df[feature_name], color='grey')
+    #         plt.title(f"Distribution of {feature_name} in 0 vs 1", fontsize=14)
+    #         plt.xlabel("Classes")
+    #         plt.xticks([0, 1], ["0", "1"], fontsize=12)
+    #         violin_plot_path = os.path.join(feat_folder_path, f"{safe_feat_name}_violinplot.png")
+    #         plt.savefig(violin_plot_path, dpi=dpi)
+    #         plt.close()
+            
+        
+    # #correlation matrix of the features only with the first 20 features
+    # if len(selected_features) > 1:
+    #     features_for_corr = X.columns[:200]
+    #     corr_matrix = X[features_for_corr].corr()
+    #     plt.figure(figsize=(12, 10))
+    #     sns.heatmap(corr_matrix, annot=False, cmap='coolwarm', square=True, cbar_kws={"shrink": .8})
+    #     plt.title("Features Correlation Matrix", fontsize=16)
+    #     plt.xticks(rotation=45, ha='right')
+    #     plt.tight_layout()
+    #     corr_plot_path = os.path.join(experiment_dir, "correlation_matrix.png")
+    #     plt.savefig(corr_plot_path, dpi=dpi)
+    #     print(f"  --> Saved correlation matrix: {corr_plot_path}\n")
+        
+
     # ==============================================================================
-    # Bloque 2: Selección de Características (Feature Selection) 
+    # Bloque 2: Selección de Características (Estrategia LASSO Multivariante)
     # ==============================================================================
     
     # --- 2. Cleaning (Avoid Leakage) ---
     df = pd.read_csv(args.csv)
     y = df["label"].values
     groups = df["patient_id"].values
-    # Identificar columnas a eliminar (Leakage Prevention)
+    
     cols_to_drop = ['id_igtp','patient_id', 'study_id', 'label', 'mask_type','SSA_type']
     X = df.drop(columns=[c for c in cols_to_drop if c in df.columns], errors='ignore')
-    # Eliminar columnas de diagnóstico (metadatos de radiómica)
     X = X.drop(columns=[c for c in X.columns if 'diagnostics' in c], errors='ignore')
 
     # --- Feature selection ---
-    selected_features = X.columns
     if os.path.exists(df_path_1):
         print(f">> Cargando selección de variables existente desde: {df_path_1}")
-        train_auc_pvals_df = pd.read_csv(df_path_1, index_col=0)
-        # Seleccionar las N mejores basadas en el rendimiento del archivo cargado
-        num_features_model = round(X.shape[0]/2)
-        selected_features = train_auc_pvals_df.index[0:num_features_model].tolist()
+        train_df = pd.read_csv(df_path_1, index_col=0)
+        selected_features = train_df.index.tolist()
         X = X[selected_features]
     else:
-        print(">> No se encontró análisis previo. Iniciando selección de características...")
+        print(">> No se encontró análisis previo. Iniciando selección multivariante (LASSO)...")
         os.makedirs(fs_dir, exist_ok=True)
         images_dir = os.path.join(fs_dir, "images")
         os.makedirs(images_dir, exist_ok=True)
 
-        # Initialize lists to store statistics per feature
-        feature_names, sensitivity_list, specificity_list = ([] for _ in range(3))
-        auc_list, threshold_list, test_type_list, pvalue_list, pos_vs_neg_list = ([] for _ in range(5))
+        # 1. Análisis Univariante Inicial (Para tener las estadísticas base)
+        from scipy.stats import shapiro, ttest_ind, mannwhitneyu
+        from sklearn import metrics
         
-        # Evaluate each feature individually
+        feature_names, pvalue_list, auc_list, test_type_list = [], [], [], []
+        pos_vs_neg_list, threshold_list, sens_list, spec_list = [], [], [], []
+
         for column in X.columns:
-            # Shapiro-Wilk normality test
-            stat, p = shapiro(X[column])
+            stat, p_norm = shapiro(X[column])
+            a_dist = X[column][y == 0]
+            b_dist = X[column][y == 1]
             
-            # Get distributions by class
-            a_dist = X[column][y == 0]  # Class 0
-            b_dist = X[column][y == 1]  # Class 1
-            
-            feature_names.append(column)
-            
-            # Select statistical test according to normality
-            alpha = 0.05
-            if p > alpha: # If p > 0.05, assume normality
-                test_type_list.append('t-test')
-                _, pval = ttest_ind(a_dist, b_dist) # T-test for normal data
+            if p_norm > 0.05:
+                test_type = 't-test'
+                _, pval = ttest_ind(a_dist, b_dist)
             else:
-                test_type_list.append('mann-whitney U-test')
-                _, pval = mannwhitneyu(a_dist, b_dist) # Non-parametric test
-            pvalue_list.append(pval)
+                test_type = 'mann-whitney U-test'
+                _, pval = mannwhitneyu(a_dist, b_dist)
             
-            # Evaluate discriminative capacity (AUC)
             fpr, tpr, thresholds = metrics.roc_curve(y, X[column], pos_label=1)
             auc_val = metrics.auc(fpr, tpr)
-
-            # If AUC < 0.5, invert the relationship (greater/lesser)
-            pos_vs_neg = ">" 
+            pos_vs_neg = ">"
             if auc_val < 0.5:
                 fpr, tpr, thresholds = metrics.roc_curve(y, X[column], pos_label=0)
                 auc_val = metrics.auc(fpr, tpr)
                 pos_vs_neg = "<"
+
+            # Youden Index para Cutoff
+            j_idx = tpr - fpr
+            best_idx = np.argmax(j_idx)
+            
+            feature_names.append(column)
+            pvalue_list.append(pval)
             auc_list.append(auc_val)
+            test_type_list.append(test_type)
             pos_vs_neg_list.append(pos_vs_neg)
-            
-            # Find optimal point in ROC curve (Youden's J index)
-            roc_df = pd.DataFrame({
-                'fpr': fpr,
-                'tpr': tpr,
-                '1-fpr': 1 - fpr,
-                'tf': tpr - (1 - fpr),   # Youden's J = Sensitivity + Specificity - 1
-                'thresholds': thresholds
-            })
-            cutoff_df = roc_df.iloc[(roc_df.tf - 0).abs().argsort()[:1]] # Closest point to optimal
-            
-            # Save sensitivity, specificity and optimal threshold
-            sensitivity_list.append(cutoff_df['tpr'].values[0])
-            specificity_list.append(cutoff_df['1-fpr'].values[0])
-            threshold_list.append(cutoff_df['thresholds'].values[0])
+            threshold_list.append(thresholds[best_idx])
+            sens_list.append(tpr[best_idx])
+            spec_list.append(1 - fpr[best_idx])
+
+        # Ranking base (sin filtro aún)
+        train_auc_pvals_df = pd.DataFrame({
+            'AUC': auc_list, 'Pos.vs.Neg.': pos_vs_neg_list, 'Cutoff-Threshold': threshold_list,
+            'Sensitivity': sens_list, 'Specificity': spec_list, 'Test': test_type_list, 'p-value': pvalue_list
+        }, index=feature_names)
+
+        # 2. Filtro de Redundancia (Spearman > 0.85)
+        X_numeric = X.select_dtypes(include=[np.number])
+        corr_matrix = X_numeric.corr(method='spearman').abs()
+        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+        to_drop = [column for column in upper.columns if any(upper[column] > 0.85)]
+        X_filtered = X_numeric.drop(columns=to_drop)
+        print(f"  --> {len(to_drop)} variables eliminadas por alta correlación (>0.85).")
+
+        # # 3. Selección Multivariante con LASSO
+
         
-        # Create DataFrame with all statistics per feature
-        train_auc_pvals_df = pd.DataFrame(
-            list(zip(auc_list, pos_vs_neg_list, threshold_list,
-                        sensitivity_list, specificity_list, 
-                        test_type_list, pvalue_list)),
-            index=feature_names,
-            columns=['AUC', 'Pos.vs.Neg.', 'Cutoff-Threshold', 'Sensitivity',
-                        'Specificity', 'Test', 'p-value']
-        ).sort_values(by='p-value', ascending=True) #
+        # scaler = StandardScaler()
+        # X_scaled = scaler.fit_transform(X_filtered)
+        
+        # # Intentamos LASSO
+        # lasso = LassoCV(cv=5, random_state=42, max_iter=10000).fit(X_scaled, y)
+        # coef = pd.Series(lasso.coef_, index=X_filtered.columns)
+        # selected_lasso = coef[coef != 0].abs().sort_values(ascending=False)
 
-        df_path_raw = os.path.join(fs_dir, "ranking_puro_sin_correlacion.csv")
-        train_auc_pvals_df.to_csv(df_path_raw)
-        print(f"  --> Guardado ranking inicial (sin filtro): {df_path_raw}")
-
-        # --- FILTRO DE REDUNDANCIA (CORRELACIÓN) ---
-        print("  --> Eliminando características redundantes (Spearman > 0.95)...")
-        X_sorted = X[train_auc_pvals_df.index]
-        corr_matrix = X_sorted.corr(method='spearman').abs()
-
-        to_drop = set()
-        for i in range(len(corr_matrix.columns)):
-            for j in range(i):
-                if corr_matrix.iloc[i, j] > 0.95:
-                    colname = corr_matrix.columns[i]
-                    to_drop.add(colname)
-
-        # Aplicar limpieza
-        train_df_filtered = train_auc_pvals_df.drop(index=list(to_drop))
-        print(f"  --> {len(to_drop)} variables eliminadas por alta correlación.")
+        # # --- CLÁUSULA DE SEGURIDAD ---
+        # num_max = max(3, int(X.shape[0] / 10))
+        
+        # if len(selected_lasso) >= 3:
+        #     print(f"  --> LASSO ha funcionado. Seleccionando las top {num_max} variables.")
+        #     selected_features = selected_lasso.index[:num_max].tolist()
+        # else:
+        #     print("  --> ADVERTENCIA: LASSO ha sido demasiado estricto (0 o pocas variables).")
+        #     print(f"  --> Rescatando las {num_max} mejores variables por p-valor individual.")
+        #     # Rescatamos del ranking univariante que calculamos al principio del bloque
+        #     ranking_filtrado = train_auc_pvals_df.loc[X_filtered.columns]
+        #     selected_features = ranking_filtrado.sort_values(by='p-value').index[:num_max].tolist()
+        
+        # # 4. Preparación de X y train_df final
+        # X = X[selected_features]
+        # train_df = train_auc_pvals_df.loc[selected_features].copy()
 
 
-        # Select features: maximum 1 feature per 15 samples
-        num_features_model = round(X.shape[0]/2)
-        train_df = train_df_filtered.sort_values(by='p-value', ascending=True)
+        # 3. Selección Multivariante: RFE como motor principal (LASSO opcional)
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.feature_selection import RFECV
 
-        # Select the N most significant features
-        selected_features = train_df.index[0:num_features_model]
-        print(f"  --> Selected {len(selected_features)} most relevant features.")
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X_filtered)
+        
+        print("  --> Iniciando RFECV (Búsqueda del set óptimo)...")
+        
+        # Usamos un modelo base robusto para RFE
+        # Ponemos C=1.0 para que no sea tan estricto como LassoCV
+        base_model = LogisticRegression(
+            penalty='l1', 
+            solver='liblinear', 
+            class_weight='balanced', 
+            random_state=42,
+            C=1.0 # Menos penalización para dejar pasar señal
+        )
 
-        # Filter DataFrame to use only selected features
+        # El selector buscará el número de variables (mínimo 2, máximo 10) que mejor F1 den
+        selector = RFECV(
+            estimator=base_model,
+            step=1,
+            cv=5, 
+            scoring='f1',
+            min_features_to_select=2
+        )
+        
+        selector.fit(X_scaled, y)
+        
+        # Extraemos las supervivientes
+        selected_features = X_filtered.columns[selector.support_].tolist()
+
+        # --- CLÁUSULA DE RESCATE (Si RFE también es muy estricto) ---
+        if len(selected_features) < 2:
+            print(" --> ADVERTENCIA: RFE demasiado estricto. Rescatando Top 5 por AUC/p-valor.")
+            ranking_filtrado = train_auc_pvals_df.loc[X_filtered.columns]
+            selected_features = ranking_filtrado.sort_values(by='p-value').index[:5].tolist()
+        else:
+            print(f" --> RFE ha encontrado {len(selected_features)} variables óptimas.")
+
+        # 4. Preparación de X y train_df final
         X = X[selected_features]
-        # Save DataFrame with complete statistics
-        df_path_1 = os.path.join(fs_dir, f"train_auc_pvals_df.csv")
-        train_df_filtered.loc[selected_features].to_csv(df_path_1)
-        print(f"  --> Saved CSV: {df_path_1}\n")
+        train_df = train_auc_pvals_df.loc[selected_features].copy()
+        
+        # Añadimos el peso de Lasso si existe, si no, ponemos 0
+        train_df['Lasso_Weight'] = [selected_lasso.get(f, 0) for f in selected_features]
+        
+        # Guardar CSV final
+        df_path_1 = os.path.join(fs_dir, "train_auc_pvals_df.csv")
+        train_df.to_csv(df_path_1)
+        print(f"  --> Selección final confirmada: {selected_features}")
 
-        top_20 = train_df_filtered.index[:20]
-
-
-        for rank, feature_name in enumerate(top_20, start=1):
-            # Create filename
+        # --- GENERACIÓN DE IMÁGENES (Solo las seleccionadas) ---
+        for rank, feature_name in enumerate(selected_features, start=1):
             safe_feat_name = feature_name.replace("/", "_")
-            feat_folder_name = f"{rank}_{safe_feat_name}"
-            feat_folder_path = os.path.join(images_dir, feat_folder_name)
-            os.mkdir(feat_folder_path)
+            feat_folder_path = os.path.join(images_dir, f"{rank}_{safe_feat_name}")
+            os.makedirs(feat_folder_path, exist_ok=True)
             
-            # 1. Violin plot to visualize distributions by class
             plt.figure(figsize=(9, 9))
             sns.violinplot(x=y, y=df[feature_name], color='grey')
-            plt.title(f"Distribution of {feature_name} in 0 vs 1", fontsize=14)
-            plt.xlabel("Classes")
-            plt.xticks([0, 1], ["0", "1"], fontsize=12)
-            violin_plot_path = os.path.join(feat_folder_path, f"{safe_feat_name}_violinplot.png")
-            plt.savefig(violin_plot_path, dpi=dpi)
+            plt.title(f"Distribución: {feature_name}\n(Lasso Weight: {train_df.loc[feature_name, 'Lasso_Weight']:.4f})")
+            plt.savefig(os.path.join(feat_folder_path, f"{safe_feat_name}_violinplot.png"), dpi=dpi)
             plt.close()
-            
-        
-    #correlation matrix of the features only with the first 20 features
+
+    # Bloque final de correlación (Matriz de las seleccionadas)
     if len(selected_features) > 1:
-        features_for_corr = X.columns[:200]
-        corr_matrix = X[features_for_corr].corr()
-        plt.figure(figsize=(12, 10))
-        sns.heatmap(corr_matrix, annot=False, cmap='coolwarm', square=True, cbar_kws={"shrink": .8})
-        plt.title("Features Correlation Matrix", fontsize=16)
-        plt.xticks(rotation=45, ha='right')
+        corr_matrix_final = X.corr()
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(corr_matrix_final, annot=True, cmap='coolwarm', fmt=".2f")
+        plt.title("Matriz de Correlación de la Firma Seleccionada")
         plt.tight_layout()
-        corr_plot_path = os.path.join(experiment_dir, "correlation_matrix.png")
-        plt.savefig(corr_plot_path, dpi=dpi)
-        print(f"  --> Saved correlation matrix: {corr_plot_path}\n")
-        
+        plt.savefig(os.path.join(experiment_dir, "correlation_matrix_final.png"), dpi=dpi)    
 
     # ==============================================================================
     # Bloque 3: Entrenamiento y Evaluación de Modelos (Cross-Validation)  
@@ -703,14 +886,32 @@ if __name__ == "__main__":
     if os.path.exists(best_results_dir):
         print(f"\n>>> El re-entrenamiento del mejor modelo ya existe en {best_results_dir}. Saltando...")
     else:
-        # Fine-tuning del mejor modelo
-        if len(curves_info_optimal) > 0:
-            best_model = curves_info_optimal[0]["classifier"]
-            print("The best model is:", best_model)
-        else:
-            # Fallback si no hay curvas (ej. si se cargaron resultados pero no se regeneraron las curvas)
-            best_model = df_results.groupby("Classifier")["val_auc"].mean().idxmax()
+        # # Fine-tuning del mejor modelo
+        # if len(curves_info_optimal) > 0:
+        #     best_model = curves_info_optimal[0]["classifier"]
+        #     print("The best model is:", best_model)
+        # else:
+        #     # Fallback si no hay curvas (ej. si se cargaron resultados pero no se regeneraron las curvas)
+        #     best_model = df_results.groupby("Classifier")["val_auc"].mean().idxmax()
         
+        # ----
+        print("\n>>> Seleccionando el modelo ganador (Equilibrio Rendimiento/Estabilidad)...")
+        
+        # Calculamos medias y desviaciones
+        means = df_results.groupby("Classifier")["val_auc"].mean()
+        stds = df_results.groupby("Classifier")["val_auc"].std()
+        
+        # Creamos un score: Penalizamos la desviación restándola de la media
+        # Así buscamos el valor más alto de esta combinación
+        quality_score = means - stds
+        best_model = quality_score.idxmax() 
+        
+        print(f"GANADOR SELECCIONADO: {best_model}")
+        print(f"  --> Score de Calidad (Mean - Std): {quality_score[best_model]:.3f}")
+        print(f"  --> Rendimiento (Mean AUC): {means[best_model]:.3f}")
+        print(f"  --> Estabilidad (Std Dev): {stds[best_model]:.3f}")
+        # ----
+
         # Name mapping para compatibilidad con los argumentos del Script 3
         model_mapping = {
             "SVM": "SVM",
