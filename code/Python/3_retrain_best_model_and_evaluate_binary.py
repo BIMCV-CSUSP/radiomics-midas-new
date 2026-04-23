@@ -1,844 +1,1065 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Script for optimization and advanced evaluation of the best model.
 
-This script performs:
-1. Hyperparameter fine-tuning through Bayesian search
-2. Evaluation on a hold-out test set
-3. Model probability calibration
-4. Interpretability analysis with SHAP and LIME
 """
-import matplotlib as mpl
+Script 3: fine-tuning, calibración, thresholding y explicabilidad
+del mejor modelo, alineado con un pipeline SIN data leakage.
+
+Características principales:
+1) Split train/test por grupos
+2) Selección final de variables SOLO en train
+3) BayesSearchCV SOLO en train
+4) Selección del threshold SOLO con predicciones OOF en train
+5) Evaluación final UNA sola vez en test
+6) SHAP sobre el modelo final entrenado
+
+Nota:
+- Este script ya no depende de variables_usadas.txt.
+- Opcionalmente puede usar features_per_fold.csv para derivar una firma estable.
+"""
 
 import os
 import argparse
+import warnings
+from copy import deepcopy
+from collections import Counter
+
 import numpy as np
 import pandas as pd
-import re
-import matplotlib.pyplot as plt
-import seaborn as sns
-from matplotlib.colors import LinearSegmentedColormap
 
 import matplotlib as mpl
-mpl.use('Agg')
+mpl.use("Agg")
+import matplotlib.pyplot as plt
+import seaborn as sns
 import scienceplots
-plt.style.use(['science', 'grid'])
+
+plt.style.use(["science", "grid"])
 mpl.rcParams["text.usetex"] = False
 dpi = 300
 
-# Libraries for interpretability
 import shap
-from lime.lime_tabular import LimeTabularExplainer
+import joblib
 
-from copy import deepcopy
+from scipy.special import expit
+from scipy.stats import shapiro, ttest_ind, mannwhitneyu
+from statsmodels.stats.multitest import multipletests
+
+from sklearn.base import clone
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GroupShuffleSplit, StratifiedGroupKFold
 from sklearn.preprocessing import StandardScaler
-from sklearn.feature_selection import VarianceThreshold
-
-# Classifier imports
-from sklearn.svm import SVC
+from sklearn.feature_selection import VarianceThreshold, RFECV
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 
-# Tools for evaluation and calibration
-from sklearn.calibration import CalibratedClassifierCV, CalibrationDisplay
-from sklearn.metrics import brier_score_loss
+from sklearn.calibration import CalibrationDisplay
 from sklearn.metrics import (
     roc_auc_score, matthews_corrcoef, cohen_kappa_score, f1_score,
     accuracy_score, recall_score, precision_score, balanced_accuracy_score,
-    confusion_matrix, ConfusionMatrixDisplay, classification_report
+    confusion_matrix, ConfusionMatrixDisplay, classification_report,
+    brier_score_loss, roc_curve
 )
 
-# Bayesian optimization of hyperparameters
 from skopt import BayesSearchCV
 from skopt.space import Real, Integer, Categorical
 
-import joblib
 
-# For statistical analysis of SHAP values
-from scipy.stats import mannwhitneyu
-from statsmodels.stats.multitest import multipletests
+# ==============================================================================
+# UTILIDADES GENERALES
+# ==============================================================================
 
-
-def save_plot_both_formats(fig_path_base, dpi=300, bbox_inches='tight'):
-    """
-    Helper function to save plots in both PNG and PDF formats.
-    
-    Args:
-        fig_path_base: Base path without extension (e.g., '/path/to/figure')
-        dpi: DPI for PNG format
-        bbox_inches: bbox_inches parameter for plt.savefig
-    """
-    # Save as PNG
+def save_plot_both_formats(fig_path_base, dpi=300, bbox_inches="tight"):
     png_path = f"{fig_path_base}.png"
-    plt.savefig(png_path, dpi=dpi, bbox_inches=bbox_inches)
-    
-    # Save as PDF
     pdf_path = f"{fig_path_base}.pdf"
-    plt.savefig(pdf_path, format='pdf', bbox_inches=bbox_inches)
-    
-    print(f"  --> Figure saved as PNG: {png_path}")
-    print(f"  --> Figure saved as PDF: {pdf_path}")
+    plt.savefig(png_path, dpi=dpi, bbox_inches=bbox_inches)
+    plt.savefig(pdf_path, format="pdf", bbox_inches=bbox_inches)
+    print(f"  --> Guardado: {png_path}")
+    print(f"  --> Guardado: {pdf_path}")
 
-###########################
-#         SHAP            #
-###########################
+
+def safe_shapiro(x, random_state=42, max_n=500):
+    """
+    Shapiro-Wilk robusto para n grandes.
+    """
+    x = pd.Series(x).dropna()
+    if len(x) < 3 or x.nunique() < 2:
+        return 1.0
+    if len(x) > max_n:
+        x = x.sample(max_n, random_state=random_state)
+    try:
+        _, p = shapiro(x)
+    except Exception:
+        p = 1.0
+    return p
+
+
+def clean_input_dataframe(df):
+    """
+    Limpieza consistente con el pipeline principal.
+    """
+    cols_to_drop = [
+        "id_igtp", "patient_id", "study_id",
+        "label", "mask_type", "SSA_type"
+    ]
+
+    if "label" not in df.columns:
+        raise ValueError("El CSV debe contener una columna 'label'.")
+    if "patient_id" not in df.columns:
+        raise ValueError("El CSV debe contener una columna 'patient_id'.")
+
+    y = df["label"].values
+    groups = df["patient_id"].values
+
+    X = df.drop(columns=[c for c in cols_to_drop if c in df.columns], errors="ignore")
+    X = X.drop(columns=[c for c in X.columns if "diagnostics" in c], errors="ignore")
+
+    # Nos quedamos solo con columnas numéricas
+    X = X.select_dtypes(include=[np.number]).copy()
+
+    return X, y, groups
+
+
+# ==============================================================================
+# SELECCIÓN FINAL DE VARIABLES (TRAIN-ONLY)
+# ==============================================================================
+
+def build_stable_feature_candidates(features_per_fold_path, min_frequency=0.50):
+    """
+    Construye una lista de variables candidatas "estables" a partir de features_per_fold.csv.
+    Espera una columna 'Selected_Features' que contenga listas serializadas.
+    """
+    df_feat = pd.read_csv(features_per_fold_path)
+    if "Selected_Features" not in df_feat.columns:
+        raise ValueError("features_per_fold.csv debe contener la columna 'Selected_Features'.")
+
+    all_lists = []
+    for item in df_feat["Selected_Features"]:
+        if pd.isna(item):
+            continue
+        if isinstance(item, str):
+            try:
+                parsed = eval(item)
+            except Exception:
+                parsed = []
+        else:
+            parsed = item
+        if isinstance(parsed, (list, tuple)):
+            all_lists.append(list(parsed))
+
+    flat = [feat for lst in all_lists for feat in lst]
+    counts = Counter(flat)
+
+    n_folds = max(len(all_lists), 1)
+    stable = [feat for feat, c in counts.items() if (c / n_folds) >= min_frequency]
+
+    # Ordenamos por frecuencia descendente
+    stable = sorted(stable, key=lambda f: counts[f], reverse=True)
+    return stable, counts
+
+
+def select_features_train_only(
+    X_train,
+    y_train,
+    groups_train=None,
+    corr_threshold=0.85,
+    min_features=2,
+    candidate_features=None,
+    random_state=42
+):
+    """
+    Selección final de variables SOLO en TRAIN.
+    Pipeline:
+      1) Screening univariante (p-value)
+      2) Filtro de redundancia (Spearman)
+      3) RFECV multivariante con Logistic L1 y CV por grupos
+    """
+    X_work = X_train.copy()
+
+    if candidate_features is not None:
+        candidate_features = [f for f in candidate_features if f in X_work.columns]
+        if len(candidate_features) > 0:
+            X_work = X_work[candidate_features].copy()
+
+    # -------- 1) Ranking univariante (TRAIN ONLY) --------
+    pvals = {}
+    aucs = {}
+
+    for col in X_work.columns:
+        x_col = X_work[col]
+
+        # Si la columna es constante o inválida, penalizarla
+        if pd.Series(x_col).nunique(dropna=True) < 2:
+            pvals[col] = 1.0
+            aucs[col] = 0.5
+            continue
+
+        p_norm = safe_shapiro(x_col, random_state=random_state)
+
+        a = x_col[y_train == 0]
+        b = x_col[y_train == 1]
+
+        try:
+            if p_norm > 0.05:
+                _, pval = ttest_ind(a, b, equal_var=False, nan_policy="omit")
+            else:
+                _, pval = mannwhitneyu(a, b, alternative="two-sided")
+        except Exception:
+            pval = 1.0
+
+        try:
+            fpr, tpr, _ = roc_curve(y_train, x_col, pos_label=1)
+            auc_val = np.trapz(tpr, fpr)
+            if auc_val < 0.5:
+                fpr, tpr, _ = roc_curve(y_train, x_col, pos_label=0)
+                auc_val = np.trapz(tpr, fpr)
+        except Exception:
+            auc_val = 0.5
+
+        pvals[col] = pval
+        aucs[col] = auc_val
+
+    ranked_cols = sorted(pvals.keys(), key=lambda c: (pvals[c], -aucs[c]))
+    X_ranked = X_work[ranked_cols]
+
+    # -------- 2) Filtro de correlación --------
+    corr = X_ranked.corr(method="spearman").abs()
+    upper = corr.where(np.triu(np.ones(corr.shape), k=1).astype(bool))
+    to_drop = [col for col in upper.columns if any(upper[col] > corr_threshold)]
+    X_clean = X_ranked.drop(columns=to_drop, errors="ignore")
+
+    if X_clean.shape[1] < min_features:
+        selected = ranked_cols[:min_features]
+        return selected, {
+            "ranked_cols": ranked_cols,
+            "to_drop_corr": to_drop,
+            "n_after_corr": X_clean.shape[1]
+        }
+
+    # -------- 3) RFECV multivariante con grupos --------
+    inner_cv = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=random_state)
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_clean)
+
+    base_model = LogisticRegression(
+        penalty="l1",
+        solver="liblinear",
+        class_weight="balanced",
+        C=1.0,
+        max_iter=5000,
+        random_state=random_state
+    )
+
+    selector = RFECV(
+        estimator=base_model,
+        step=1,
+        cv=inner_cv,
+        scoring="roc_auc",
+        min_features_to_select=min_features,
+        n_jobs=-1
+    )
+
+    if groups_train is None:
+        # fallback si no hay grupos
+        selector.fit(X_scaled, y_train)
+    else:
+        selector.fit(X_scaled, y_train, groups=groups_train)
+
+    selected_features = X_clean.columns[selector.support_].tolist()
+
+    if len(selected_features) < min_features:
+        selected_features = ranked_cols[:min_features]
+
+    info = {
+        "ranked_cols": ranked_cols,
+        "to_drop_corr": to_drop,
+        "n_after_corr": X_clean.shape[1]
+    }
+    return selected_features, info
+
+
+# ==============================================================================
+# MODELOS Y ESPACIOS DE BÚSQUEDA
+# ==============================================================================
+
+def get_model_and_search_space(selected_model, random_state=42):
+    """
+    Devuelve pipeline y espacio de búsqueda Bayes para el modelo elegido.
+    """
+    if selected_model == "SVM":
+        pipe = make_pipeline(
+            StandardScaler(),
+            VarianceThreshold(),
+            SVC(random_state=random_state, probability=True, class_weight="balanced")
+        )
+        param_grid = {
+            "svc__C": Real(1e-4, 1e3, prior="log-uniform"),
+            "svc__kernel": Categorical(["linear", "rbf", "poly"]),
+            "svc__gamma": Real(1e-4, 1e3, prior="log-uniform"),
+            "svc__coef0": Real(0.0, 1.0)
+        }
+
+    elif selected_model == "LogisticRegression":
+        pipe = make_pipeline(
+            StandardScaler(),
+            VarianceThreshold(),
+            LogisticRegression(
+                class_weight="balanced",
+                random_state=random_state,
+                solver="saga",
+                max_iter=10000
+            )
+        )
+        param_grid = {
+            "logisticregression__C": Real(1e-4, 1e3, prior="log-uniform"),
+            "logisticregression__penalty": Categorical(["l1", "l2", "elasticnet"]),
+            "logisticregression__l1_ratio": Real(0.1, 0.9)
+        }
+
+    elif selected_model == "RandomForest":
+        pipe = make_pipeline(
+            StandardScaler(),
+            VarianceThreshold(),
+            RandomForestClassifier(
+                n_jobs=-1,
+                class_weight="balanced_subsample",
+                random_state=random_state
+            )
+        )
+        param_grid = {
+            "randomforestclassifier__n_estimators": Integer(100, 800),
+            "randomforestclassifier__max_depth": Integer(2, 12),
+            "randomforestclassifier__max_features": Categorical(["sqrt", "log2", None]),
+            "randomforestclassifier__min_samples_split": Integer(2, 20)
+        }
+
+    elif selected_model == "NaiveBayes":
+        pipe = make_pipeline(
+            StandardScaler(),
+            VarianceThreshold(),
+            GaussianNB()
+        )
+        # Le damos al menos un parámetro para BayesSearchCV
+        param_grid = {
+            "gaussiannb__var_smoothing": Real(1e-12, 1e-6, prior="log-uniform")
+        }
+
+    elif selected_model == "KNN":
+        pipe = make_pipeline(
+            StandardScaler(),
+            VarianceThreshold(),
+            KNeighborsClassifier(n_jobs=-1)
+        )
+        param_grid = {
+            "kneighborsclassifier__n_neighbors": Integer(2, 12),
+            "kneighborsclassifier__weights": Categorical(["uniform", "distance"])
+        }
+
+    elif selected_model == "GradientBoosting":
+        pipe = make_pipeline(
+            StandardScaler(),
+            VarianceThreshold(),
+            GradientBoostingClassifier(random_state=random_state)
+        )
+        param_grid = {
+            "gradientboostingclassifier__n_estimators": Integer(50, 600),
+            "gradientboostingclassifier__learning_rate": Real(1e-4, 0.2, prior="log-uniform"),
+            "gradientboostingclassifier__max_depth": Integer(1, 6),
+            "gradientboostingclassifier__subsample": Real(0.5, 1.0),
+            "gradientboostingclassifier__max_features": Categorical(["sqrt", "log2", None])
+        }
+
+    else:
+        raise ValueError(f"Modelo no reconocido: {selected_model}")
+
+    return pipe, param_grid
+
+
+# ==============================================================================
+# SCORES, CALIBRACIÓN Y THRESHOLD
+# ==============================================================================
+
+def get_raw_scores(fitted_estimator, X):
+    """
+    Devuelve un score continuo:
+    - predict_proba[:,1] si existe
+    - decision_function si no
+    - error si no existe ninguno
+    """
+    if hasattr(fitted_estimator, "predict_proba"):
+        return fitted_estimator.predict_proba(X)[:, 1]
+    elif hasattr(fitted_estimator, "decision_function"):
+        return fitted_estimator.decision_function(X)
+    else:
+        raise ValueError("El estimador no implementa ni predict_proba ni decision_function.")
+
+
+def get_probability_like(fitted_estimator, X):
+    """
+    Probabilidad aproximada para curvas de calibración / Brier:
+    - predict_proba[:,1] si existe
+    - sigmoid(decision_function) si no (solo como proxy pre-calibración)
+    """
+    if hasattr(fitted_estimator, "predict_proba"):
+        return fitted_estimator.predict_proba(X)[:, 1]
+    elif hasattr(fitted_estimator, "decision_function"):
+        return expit(fitted_estimator.decision_function(X))
+    else:
+        raise ValueError("No se puede obtener una probabilidad aproximada del estimador.")
+
+
+def get_oof_scores(estimator, X, y, groups, cv):
+    """
+    Obtiene scores out-of-fold (OOF) sobre TRAIN para:
+    - calibración tipo Platt (train-only)
+    - selección de threshold (train-only)
+    """
+    oof_scores = np.full(shape=len(y), fill_value=np.nan, dtype=float)
+
+    for tr_idx, va_idx in cv.split(X, y, groups=groups):
+        est = clone(estimator)
+        est.fit(X.iloc[tr_idx], y[tr_idx])
+
+        scores = get_raw_scores(est, X.iloc[va_idx])
+        oof_scores[va_idx] = scores
+
+    return oof_scores
+
+
+def fit_platt_scaler(oof_scores, y_true, random_state=42):
+    """
+    Ajuste de Platt scaling sobre scores OOF del train.
+    """
+    scores = np.asarray(oof_scores).reshape(-1, 1)
+    y_true = np.asarray(y_true)
+
+    lr = LogisticRegression(
+        solver="lbfgs",
+        random_state=random_state,
+        max_iter=1000
+    )
+    lr.fit(scores, y_true)
+    return lr
+
+
+def apply_platt_scaler(platt_model, raw_scores):
+    scores = np.asarray(raw_scores).reshape(-1, 1)
+    return platt_model.predict_proba(scores)[:, 1]
+
+
+def calibration_error(y_true, y_prob, n_bins=10, norm="l1"):
+    y_true = np.asarray(y_true, dtype=np.float64)
+    y_prob = np.asarray(y_prob, dtype=np.float64)
+
+    if norm not in {"l1", "l2"}:
+        raise ValueError("norm must be 'l1' or 'l2'")
+
+    bins = np.linspace(0.0, 1.0, n_bins + 1)
+    bin_ids = np.digitize(y_prob, bins, right=True) - 1
+    bin_ids = np.clip(bin_ids, 0, n_bins - 1)
+
+    err_total = 0.0
+    N = len(y_true)
+
+    for i in range(n_bins):
+        idx = (bin_ids == i)
+        if idx.any():
+            prob_avg = y_prob[idx].mean()
+            acc_avg = y_true[idx].mean()
+            err_bin = abs(prob_avg - acc_avg) if norm == "l1" else (prob_avg - acc_avg) ** 2
+            err_total += err_bin * idx.sum() / N
+
+    return err_total
+
+
+def find_best_threshold_from_train_probs(y_train, prob_train, metric="f1"):
+    """
+    Selecciona threshold SOLO usando train (OOF probabilities).
+    """
+    thresholds = np.linspace(0.1, 0.9, 81)  # más fino que 0.1,0.2,...
+    best_threshold = 0.5
+    best_score = -np.inf
+    rows = []
+
+    for thr in thresholds:
+        y_pred_thr = (prob_train >= thr).astype(int)
+
+        if metric == "f1":
+            score = f1_score(y_train, y_pred_thr)
+        elif metric == "balanced_accuracy":
+            score = balanced_accuracy_score(y_train, y_pred_thr)
+        else:
+            raise ValueError("metric must be 'f1' or 'balanced_accuracy'.")
+
+        rows.append({"threshold": thr, "score": score})
+
+        if score > best_score:
+            best_score = score
+            best_threshold = thr
+
+    return best_threshold, best_score, pd.DataFrame(rows)
+
+
+def compute_metrics(y_true, y_pred, y_prob=None):
+    """
+    Métricas robustas para binaria.
+    """
+    out = {}
+    out["AUC"] = roc_auc_score(y_true, y_prob) if y_prob is not None else np.nan
+    out["MCC"] = matthews_corrcoef(y_true, y_pred)
+    out["Kappa"] = cohen_kappa_score(y_true, y_pred)
+    out["F1"] = f1_score(y_true, y_pred)
+    out["Accuracy"] = accuracy_score(y_true, y_pred)
+    out["Sensitivity"] = recall_score(y_true, y_pred, pos_label=1, zero_division=0)
+    out["Specificity"] = recall_score(y_true, y_pred, pos_label=0, zero_division=0)
+    out["PPV"] = precision_score(y_true, y_pred, pos_label=1, zero_division=0)
+    out["NPV"] = precision_score(y_true, y_pred, pos_label=0, zero_division=0)
+    out["Balanced_Accuracy"] = balanced_accuracy_score(y_true, y_pred)
+    return out
+
+
+# ==============================================================================
+# SHAP
+# ==============================================================================
 
 def perform_shap_analysis(X_data, y_data, model_clf, preprocessor, shap_dir, report_path, dataset_name="dataset"):
     """
-    Performs SHAP analysis on a dataset.
-    
-    Args:
-        X_data: Raw feature data
-        y_data: Labels
-        model_clf: Final classifier
-        preprocessor: Preprocessing pipeline
-        shap_dir: Directory to save results
-        dataset_name: Dataset name (for labeling)
+    SHAP sobre datos ya restringidos a la firma final.
     """
-    print(f"\nPerforming SHAP analysis for {dataset_name}...")
+    print(f"\n[SHAP] Analizando {dataset_name}...")
+    os.makedirs(shap_dir, exist_ok=True)
+
     try:
-        # Apply StandardScaler preserving column names
+        # Transformación manual conservando nombres
         scaler = preprocessor.steps[0][1]
-        X_scaled = pd.DataFrame(scaler.transform(X_data),
-                            index=X_data.index,
-                            columns=X_data.columns)
-        
-        # Apply VarianceThreshold and recover selected columns
+        X_scaled = pd.DataFrame(
+            scaler.transform(X_data),
+            index=X_data.index,
+            columns=X_data.columns
+        )
+
         vt = preprocessor.steps[1][1]
         mask = vt.get_support()
         selected_features = X_data.columns[mask]
-        X_transformed_array = vt.transform(X_scaled.values)
-        X_transformed = pd.DataFrame(X_transformed_array,
-                                    index=X_data.index,
-                                    columns=selected_features)
-        # Create directory for SHAP results
-        os.makedirs(shap_dir, exist_ok=True)
+        X_transformed = pd.DataFrame(
+            vt.transform(X_scaled.values),
+            index=X_data.index,
+            columns=selected_features
+        )
+
         shap_cache = os.path.join(shap_dir, "shap_values.pkl")
 
         if os.path.exists(shap_cache):
-            # load previously‐computed explainer result
             shap_values = joblib.load(shap_cache)
         else:
-            # Select appropriate explainer based on model type
             if isinstance(model_clf, (RandomForestClassifier, GradientBoostingClassifier)):
-                # For tree-based models
                 explainer = shap.TreeExplainer(model_clf)
             elif isinstance(model_clf, LogisticRegression):
-                # For linear models
                 try:
                     explainer = shap.LinearExplainer(model_clf, X_transformed)
                 except Exception:
-                    # If it fails, use KernelExplainer as alternative
                     background = shap.kmeans(X_transformed, 50)
                     explainer = shap.KernelExplainer(model_clf.predict_proba, background)
             else:
-                # For other models (SVM, KNN, NaiveBayes)
-                background = shap.kmeans(X_transformed, 50) # Dataset summary to speed up
+                background = shap.kmeans(X_transformed, 50)
                 explainer = shap.KernelExplainer(model_clf.predict_proba, background)
-            
-            # Calculate SHAP values
+
             shap_values = explainer(X_transformed)
-            joblib.dump(shap_values, os.path.join(shap_dir, 'shap_values.pkl'))
-        
-        # For binary classification, keep SHAP values for positive class
-        if shap_values.values.ndim > 2:
-            shap_values = shap_values[:,:,1]
-        
-        # --------------------------------------------------------------
-        # PART 1: STATISTICAL TEST between SHAP values and class
-        # --------------------------------------------------------------
-        print(f" - Performing statistical test (Mann-Whitney U) for {dataset_name} with Holm correction...")
-        
-        # Build DataFrame with SHAP values
+            joblib.dump(shap_values, shap_cache)
+
+        # Binaria: quedarnos con la clase positiva
+        if hasattr(shap_values, "values") and shap_values.values.ndim > 2:
+            shap_values = shap_values[:, :, 1]
+
+        # -------------------------------
+        # Test estadístico por feature
+        # -------------------------------
         shap_matrix = pd.DataFrame(
             shap_values.values,
             index=X_transformed.index,
             columns=X_transformed.columns
         )
-        
-        # Lists for statistical results
+
         features_test = []
         pvalues_raw = []
-        
-        # Perform test for each feature
+
         for feat in shap_matrix.columns:
-            # Separate SHAP values by class
             shap_class0 = shap_matrix.loc[y_data == 0, feat]
             shap_class1 = shap_matrix.loc[y_data == 1, feat]
-            
-            # Mann-Whitney U test (non-parametric test to compare distributions)
-            stat, pval = mannwhitneyu(shap_class0, shap_class1, alternative='two-sided')
+
+            try:
+                _, pval = mannwhitneyu(shap_class0, shap_class1, alternative="two-sided")
+            except Exception:
+                pval = 1.0
+
             features_test.append(feat)
             pvalues_raw.append(pval)
-        
-        # Multiple comparisons correction (Holm method)
+
         alpha = 0.05
-        reject, pvals_corr, _, _ = multipletests(pvalues_raw, alpha=alpha, method='holm')
-        
-        # Generate results report
-        lines_output = []
-        lines_output.append("=================================")
-        lines_output.append(f"MANN-WHITNEY U TEST (SHAP by feature) with 'Holm' correction for {dataset_name}")
-        lines_output.append("Comparison: Class 0 vs Class 1")
-        lines_output.append(f"alpha = {alpha}")
-        lines_output.append(f"Total features: {len(features_test)}") 
-        lines_output.append("=================================\n")
-        
-        lines_output.append(f"Results by feature (raw and corrected p-value):")
-        significant_feats = []
-        
-        # Process results for each feature
-        for feat, pval_raw, pval_corr, rej_bool in zip(features_test, pvalues_raw, pvals_corr, reject):
-            if rej_bool: # Significant difference (reject H0)
-                result_str = "=> SIGNIFICANT DIFFERENCE"
-                significant_feats.append((feat, pval_raw, pval_corr))
-            else:
-                result_str = "=> no significant difference"
-            
-            lines_output.append(
-                f"    {feat}: raw p-value={pval_raw:.4e}, corrected p-value={pval_corr:.4e} {result_str}"
-            )
-        # Summary of significant features
-        lines_output.append("")
-        lines_output.append(f" Total comparisons with significant difference: {len(significant_feats)}. Comparisons:")
-        
-        if not significant_feats:
-            lines_output.append("    No significant differences found.")
-        else:
-            for feat, pval_raw, pval_corr in significant_feats:
-                lines_output.append(
-                    f"    {feat}: raw p-value={pval_raw:.4e}, corrected p-value={pval_corr:.4e} => SIGNIFICANT DIFFERENCE"
-                )
-        
-        lines_output.append("\n")
-        
-        # Save results to file
+        reject, pvals_corr, _, _ = multipletests(pvalues_raw, alpha=alpha, method="holm")
+
         test_txt_path = os.path.join(shap_dir, "shap_statistical_test.txt")
         with open(test_txt_path, "w", encoding="utf-8") as f_out:
-            for line in lines_output:
-                f_out.write(line + "\n")
-        
-        print(f"  --> Statistical test saved at: {test_txt_path}")
-    
-        # --------------------------------------------------------------
-        # PART 2: HEATMAP (class 0 first, then class 1)
-        # --------------------------------------------------------------
-        print(f" - Generating Heatmap with samples ordered by class for {dataset_name}...")
-        # Order instances by class for visualization
+            f_out.write("=================================\n")
+            f_out.write(f"MANN-WHITNEY U TEST (SHAP) for {dataset_name}\n")
+            f_out.write("Correction: Holm\n")
+            f_out.write(f"alpha = {alpha}\n")
+            f_out.write("=================================\n\n")
+            for feat, p_raw, p_corr, rej in zip(features_test, pvalues_raw, pvals_corr, reject):
+                tag = "SIGNIFICANT" if rej else "ns"
+                f_out.write(
+                    f"{feat}: raw={p_raw:.4e}, corrected={p_corr:.4e} -> {tag}\n"
+                )
+
+        # -------------------------------
+        # Heatmap
+        # -------------------------------
         idx_class0 = np.where(y_data == 0)[0]
         idx_class1 = np.where(y_data == 1)[0]
-        
-        # Concatenate indices (first class 0, then class 1)
         idx_order = np.concatenate([idx_class0, idx_class1])
-        
-        heatmap_path = os.path.join(shap_dir, "shap_heatmap.png")
-        
-        # Generate heatmap with SHAP, specifying instance order
-        shap.plots.heatmap(
-            shap_values, 
-            show=False,
-            instance_order=idx_order
-        )
-        
+
+        shap.plots.heatmap(shap_values, show=False, instance_order=idx_order)
         fig = plt.gcf()
         ax = plt.gca()
-        
-        # Add dividing line between classes
+
         split_position = len(idx_class0)
-        ax.axvline(split_position - 0.5, color='black', linewidth=1, zorder=10)
+        ax.axvline(split_position - 0.5, color="black", linewidth=1, zorder=10)
+
         n_total = len(idx_order)
         mid_class0 = (split_position / 2) / n_total
-        mid_class1 = (split_position + len(idx_class1)/2) / n_total
-        
-        # Add labels above the heatmap
-        ax.text(mid_class0, 1.01, 'Class 0', ha='center', va='bottom', transform=ax.transAxes)
-        ax.text(mid_class1, 1.01, 'Class 1', ha='center', va='bottom', transform=ax.transAxes)
-        
-        # Save figure
+        mid_class1 = (split_position + len(idx_class1) / 2) / n_total
+
+        ax.text(mid_class0, 1.01, "Class 0", ha="center", va="bottom", transform=ax.transAxes)
+        ax.text(mid_class1, 1.01, "Class 1", ha="center", va="bottom", transform=ax.transAxes)
+
         fig.set_size_inches(10, 6)
         plt.tight_layout()
-        heatmap_path_base = os.path.splitext(heatmap_path)[0]  # Remove .png extension
-        save_plot_both_formats(heatmap_path_base, dpi=300)
+        save_plot_both_formats(os.path.join(shap_dir, "shap_heatmap"), dpi=dpi)
         plt.close()
-        print(f"  --> Reordered heatmap saved at: {heatmap_path_base}.png and {heatmap_path_base}.pdf")
-    
-        # --------------
-        # Beeswarm plot 
-        # --------------
-        shap_fig_path = os.path.join(shap_dir, "shap_beeswarm.png")
+
+        # -------------------------------
+        # Beeswarm
+        # -------------------------------
         shap.plots.beeswarm(shap_values, max_display=16, show=False)
         fig = plt.gcf()
         fig.set_size_inches(14, 8)
         plt.subplots_adjust(left=0.4, right=0.95)
         plt.tight_layout()
-        shap_fig_path_base = os.path.splitext(shap_fig_path)[0]  # Remove .png extension
-        save_plot_both_formats(shap_fig_path_base, dpi=dpi)
+        save_plot_both_formats(os.path.join(shap_dir, "shap_beeswarm"), dpi=dpi)
         plt.close()
-        print(f"  --> Beeswarm plot saved at: {shap_fig_path_base}.png and {shap_fig_path_base}.pdf")
-    
-        # --------------------------------------------------------------
-        # Scatter plots for top features
-        # --------------------------------------------------------------
-        # Create directory for individual plots
+
+        # -------------------------------
+        # Scatter top features
+        # -------------------------------
         scatter_dir = os.path.join(shap_dir, "scatter_plots")
         os.makedirs(scatter_dir, exist_ok=True)
-        # Identify the 15 features with highest impact (absolute SHAP value)
+
         mean_abs_shap = np.abs(shap_values.values).mean(axis=0)
         top_idx = np.argsort(mean_abs_shap)[-15:]
         top_idx = top_idx[np.argsort(mean_abs_shap[top_idx])[::-1]]
         top_features_shap = X_transformed.columns[top_idx]
-        
+
         for i, feature in enumerate(top_features_shap, start=1):
-            scatter_fig_path = os.path.join(scatter_dir, f"{i:02d}_{feature}.png")
             shap.plots.scatter(shap_values[:, feature], color=shap_values, show=False)
             fig = plt.gcf()
             fig.set_size_inches(10, 6)
             plt.tight_layout()
-            scatter_fig_path_base = os.path.splitext(scatter_fig_path)[0]  # Remove .png extension
-            save_plot_both_formats(scatter_fig_path_base, dpi=dpi)
+            safe_name = str(feature).replace("/", "_")
+            save_plot_both_formats(os.path.join(scatter_dir, f"{i:02d}_{safe_name}"), dpi=dpi)
             plt.close()
-        
-        print(f"  --> Scatter plots for most relevant variables saved at: {scatter_dir}")
-        return True, selected_features, shap_values, top_features_shap
-    
+
+        return True, list(selected_features), shap_values, list(top_features_shap)
+
     except Exception as e:
         with open(report_path, "a", encoding="utf-8") as f_out:
-            f_out.write(f"=== SHAP Analysis ({dataset_name}) ===\n")
-            f_out.write(" Could not generate SHAP (model not supported or error):\n")
-            f_out.write(f"  {repr(e)}\n\n")
-        print(f"Error in SHAP analysis for {dataset_name}:", e)
+            f_out.write(f"\n=== SHAP Analysis ({dataset_name}) ===\n")
+            f_out.write(f"Error: {repr(e)}\n")
+        print(f"[SHAP] Error en {dataset_name}: {e}")
         return False, None, None, None
 
 
+# ==============================================================================
+# MAIN
+# ==============================================================================
 
 def main():
-    """
-    Main function for fine-tuning, evaluation and interpretation of the best model.
-    """
-    # --- Initial configuration and command line arguments ---
     parser = argparse.ArgumentParser(
-        description="Trains and fine-tunes a model using a definitive hold-out test set and cross-validation on the remaining data. Then calibrates the model and applies SHAP if possible."
+        description="Fine-tuning, calibración y explicabilidad del mejor modelo (versión corregida)."
     )
-    parser.add_argument("--csv", type=str, default="features_all_gland.csv",
-                        help="Path to CSV with features (default 'features_all_gland.csv').")
-    parser.add_argument("--model", type=str, required=True,
-                        choices=["SVM", "LogisticRegression", "RandomForest", 
-                                 "NaiveBayes", "KNN", "GradientBoosting"],
-                        help="Model to train/optimize.")
-    parser.add_argument("--n_folds", type=int, default=5,
-                        help="Number of folds for cross-validation in BayesSearchCV")
-    parser.add_argument("--variables", type=str, default="../../../results/radiomics/most_discriminant/gland/variables_usadas.txt",
-                        help="Path to variables_usadas.txt file with variables to use.")
+    parser.add_argument("--csv", type=str, required=True, help="Ruta al CSV con features.")
+    parser.add_argument(
+        "--model",
+        type=str,
+        required=True,
+        choices=["SVM", "LogisticRegression", "RandomForest", "NaiveBayes", "KNN", "GradientBoosting"],
+        help="Modelo a optimizar."
+    )
+    parser.add_argument("--outdir", type=str, required=True, help="Directorio de salida.")
+    parser.add_argument("--n_folds", type=int, default=5, help="Número de folds CV para tuning.")
+    parser.add_argument("--test_size", type=float, default=0.20, help="Tamaño del hold-out test.")
+    parser.add_argument("--random_state", type=int, default=42, help="Semilla global.")
+    parser.add_argument(
+        "--features_per_fold",
+        type=str,
+        default=None,
+        help="CSV opcional con variables por fold (para derivar firma estable)."
+    )
+    parser.add_argument(
+        "--stable_feature_min_freq",
+        type=float,
+        default=0.50,
+        help="Frecuencia mínima de selección para considerar una variable estable."
+    )
+    parser.add_argument(
+        "--threshold_metric",
+        type=str,
+        default="f1",
+        choices=["f1", "balanced_accuracy"],
+        help="Métrica usada para elegir el threshold SOLO en train."
+    )
+
     args = parser.parse_args()
-    
-    print("\nStarting model fine-tuning.")
-    print(f"  --> Selected model: {args.model}")
-    print(f"  --> CSV used: {args.csv}")
-    print(f"  --> Variables file: {args.variables}")
 
-    # Configuration of paths and output directories
-    selected_model = args.model
-    base_dir = os.path.dirname(os.path.abspath(args.variables))
-    output_parent_dir = os.path.join(base_dir, f"best_results")
-    calibration_dir = os.path.join(output_parent_dir, "calibration")
-    explicability_dir = os.path.join(output_parent_dir, "explicability")
+    os.makedirs(args.outdir, exist_ok=True)
+    calibration_dir = os.path.join(args.outdir, "calibration")
+    explicability_dir = os.path.join(args.outdir, "explicability")
+    train_shap_dir = os.path.join(explicability_dir, "train", "SHAP")
+    test_shap_dir = os.path.join(explicability_dir, "test", "SHAP")
 
-    train_explicability_dir = os.path.join(explicability_dir, "train")
-    test_explicability_dir = os.path.join(explicability_dir, "test")
-
-    # SHAP and LIME subdirectories for train
-    train_shap_dir = os.path.join(train_explicability_dir, "SHAP")
-    train_lime_dir = os.path.join(train_explicability_dir, "LIME")
-
-    # SHAP and LIME subdirectories for test
-    test_shap_dir = os.path.join(test_explicability_dir, "SHAP")
-    test_lime_dir = os.path.join(test_explicability_dir, "LIME")
-
-    # Create directories if they don't exist
-    os.makedirs(output_parent_dir, exist_ok=True)
     os.makedirs(calibration_dir, exist_ok=True)
-    os.makedirs(explicability_dir, exist_ok=True)
-    os.makedirs(train_explicability_dir, exist_ok=True)
-    os.makedirs(test_explicability_dir, exist_ok=True)
     os.makedirs(train_shap_dir, exist_ok=True)
-    os.makedirs(train_lime_dir, exist_ok=True)
     os.makedirs(test_shap_dir, exist_ok=True)
-    os.makedirs(test_lime_dir, exist_ok=True)
-    
-    print(f"\nOutput folder created/located at: {os.path.relpath(output_parent_dir)}")
-    
-    # ----------------------------------------------------------------------
-    # 1) LOAD CSV AND IDENTIFY X, y, groups
-    # ----------------------------------------------------------------------
-    pre_path = "../../../artifacts/radiomics"
-    data_filename = str(args.csv) if args.csv else "features_all_gland.csv"
-    data_path = os.path.join(pre_path, "concatenated_data", data_filename)
-    print(f"\nLoading data from: {data_path}")
-    df = pd.read_csv(data_path)
 
-    df['patient_id_type'] = df['patient_id'].astype(str)
-    df = df.set_index('patient_id_type')
-    print(f"Data loaded. Dimensions: {df.shape}")
-    
-    # Prepare variables for modeling
-    y = df['label'].values
-    groups = df['patient_id'].values
-    X = df.drop(columns=['patient_id'])
-    
+    report_path = os.path.join(args.outdir, "report.txt")
+
+    print("\n=== INICIO SCRIPT 3 CORREGIDO ===")
+    print(f"Modelo: {args.model}")
+    print(f"CSV: {args.csv}")
+    print(f"Outdir: {args.outdir}")
+
     # ----------------------------------------------------------------------
-    # 1.1) FILTER USED VARIABLES (variables_usadas.txt)
+    # 1) CARGA Y LIMPIEZA
     # ----------------------------------------------------------------------
-    print(f"\nFiltering variables using file: {args.variables}")
-    with open(args.variables, "r", encoding="utf-8") as f_vars:
-        used_vars = [line.strip() for line in f_vars if line.strip()]
-    X = X[used_vars]
-    
+    df = pd.read_csv(args.csv)
+    X, y, groups = clean_input_dataframe(df)
+
+    with open(report_path, "w", encoding="utf-8") as f_out:
+        f_out.write("=== FINAL MODEL SCRIPT (CORREGIDO) ===\n\n")
+        f_out.write(f"Model: {args.model}\n")
+        f_out.write(f"CSV: {args.csv}\n")
+        f_out.write(f"Samples: {X.shape[0]}\n")
+        f_out.write(f"Initial features: {X.shape[1]}\n\n")
+
     # ----------------------------------------------------------------------
-    # 2) SEPARATE HOLD-OUT TEST SET AND TRAINING SET
+    # 2) HOLD-OUT TRAIN/TEST POR GRUPOS
     # ----------------------------------------------------------------------
-    gss = GroupShuffleSplit(test_size=0.2, random_state=42)
+    gss = GroupShuffleSplit(n_splits=1, test_size=args.test_size, random_state=args.random_state)
     train_idx, test_idx = next(gss.split(X, y, groups=groups))
-    X_train_full, X_test = X.iloc[train_idx], X.iloc[test_idx]
-    y_train_full, y_test = y[train_idx], y[test_idx]
+
+    X_train_full = X.iloc[train_idx].copy()
+    X_test = X.iloc[test_idx].copy()
+    y_train_full = y[train_idx]
+    y_test = y[test_idx]
     groups_train_full = groups[train_idx]
-    
+    groups_test = groups[test_idx]
+
+    print(f"Train shape: {X_train_full.shape} | Test shape: {X_test.shape}")
+
     # ----------------------------------------------------------------------
-    # 3) DEFINE PIPELINE AND SEARCH SPACE WITH BAYESIAN OPTIMIZATION
+    # 3) OPCIONAL: DERIVAR CANDIDATAS ESTABLES DESDE features_per_fold.csv
     # ----------------------------------------------------------------------
-    number_folds = args.n_folds
+    candidate_features = None
+    if args.features_per_fold is not None and os.path.exists(args.features_per_fold):
+        stable_features, counts = build_stable_feature_candidates(
+            args.features_per_fold,
+            min_frequency=args.stable_feature_min_freq
+        )
+        candidate_features = [f for f in stable_features if f in X_train_full.columns]
+
+        with open(report_path, "a", encoding="utf-8") as f_out:
+            f_out.write("=== Stable feature candidates ===\n")
+            f_out.write(f"features_per_fold: {args.features_per_fold}\n")
+            f_out.write(f"min_frequency: {args.stable_feature_min_freq}\n")
+            f_out.write(f"stable candidates found: {len(candidate_features)}\n")
+            if len(candidate_features) > 0:
+                f_out.write("Top stable candidates:\n")
+                for feat in candidate_features[:50]:
+                    f_out.write(f"  - {feat} (count={counts[feat]})\n")
+            f_out.write("\n")
+
+    # ----------------------------------------------------------------------
+    # 4) SELECCIÓN FINAL DE VARIABLES SOLO EN TRAIN
+    # ----------------------------------------------------------------------
+    print("\n[Feature selection] Selección final SOLO en train...")
+    final_features, fs_info = select_features_train_only(
+        X_train=X_train_full,
+        y_train=y_train_full,
+        groups_train=groups_train_full,
+        corr_threshold=0.85,
+        min_features=2,
+        candidate_features=candidate_features,
+        random_state=args.random_state
+    )
+
+    X_train_final = X_train_full[final_features].copy()
+    X_test_final = X_test[final_features].copy()
+
+    final_features_txt = os.path.join(args.outdir, "final_selected_features.txt")
+    with open(final_features_txt, "w", encoding="utf-8") as f:
+        for feat in final_features:
+            f.write(f"{feat}\n")
+
+    pd.DataFrame({"Feature": final_features}).to_csv(
+        os.path.join(args.outdir, "final_selected_features.csv"),
+        index=False
+    )
+
+    with open(report_path, "a", encoding="utf-8") as f_out:
+        f_out.write("=== Final feature selection (TRAIN ONLY) ===\n")
+        f_out.write(f"Final number of features: {len(final_features)}\n")
+        f_out.write("Selected features:\n")
+        for feat in final_features:
+            f_out.write(f"  - {feat}\n")
+        f_out.write("\n")
+
+    print(f"[Feature selection] Variables finales: {len(final_features)}")
+
+    # ----------------------------------------------------------------------
+    # 5) PIPELINE + BAYESSEARCH SOLO EN TRAIN
+    # ----------------------------------------------------------------------
+    print("\n[BayesSearchCV] Iniciando tuning...")
+    pipe, param_grid = get_model_and_search_space(args.model, random_state=args.random_state)
+
+    inner_cv = StratifiedGroupKFold(
+        n_splits=args.n_folds,
+        shuffle=True,
+        random_state=args.random_state
+    )
+
     score_group = {
-        'roc_auc': 'roc_auc',
-        'f1': 'f1',
-        'balanced_accuracy': 'balanced_accuracy'
+        "roc_auc": "roc_auc",
+        "f1": "f1",
+        "balanced_accuracy": "balanced_accuracy"
     }
-    score_refit_str = 'roc_auc'  # Metric to select the best model
-    random_state_value = 42      # Seed for reproducibility
-    
-    # --- Specific configuration for each model type ---
-    if selected_model == 'SVM':
-        # Pipeline for SVM: Scaling → Variance filter → SVM
-        pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             SVC(random_state=random_state_value, probability=True))
-        # Search space for hyperparameters
-        param_grid = {
-            'svc__C': Real(1e-4, 1e3, prior='log-uniform'),            # Regularization
-            'svc__kernel': Categorical(['linear', 'rbf', 'poly']),     # Kernel type
-            'svc__gamma': Real(1e-4, 1e3, prior='log-uniform'),        # Gamma parameter
-            'svc__coef0': Real(0, 1)                                   # Independent term (for poly)
-        }
-        
-    elif selected_model == 'LogisticRegression':
-        # Pipeline for Logistic Regression
-        pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             LogisticRegression(
-                                 class_weight='balanced', 
-                                 random_state=random_state_value,
-                                 solver='saga',  
-                                 max_iter=10000
-                             ))
-        # Search space
-        param_grid = {
-            'logisticregression__C': Real(1e-4, 1e3, prior='log-uniform'),  # Regularization
-            'logisticregression__penalty': Categorical(['l1', 'l2', 'elasticnet']),  # Regularization type
-            'logisticregression__l1_ratio': Real(0.1, 0.9)                  # L1/L2 ratio for elasticnet
-        }
-        
-    elif selected_model == 'RandomForest':
-        # Pipeline for Random Forest
-        pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             RandomForestClassifier(n_jobs=-1, 
-                                                    class_weight="balanced_subsample", 
-                                                    random_state=random_state_value))
-        # Search space
-        param_grid = {
-            'randomforestclassifier__n_estimators': Integer(50, 1024),       # Number of trees
-            'randomforestclassifier__max_depth': Integer(1, 10),             # Maximum depth
-            'randomforestclassifier__max_features': Categorical(['sqrt', 'log2', None]),  # Features per tree
-            'randomforestclassifier__min_samples_split': Integer(2, 20)      # Min samples to split node
-        }
-        
-    elif selected_model == 'NaiveBayes':
-        # Pipeline for Naive Bayes
-        pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             GaussianNB())
-        param_grid = {}  # Naive Bayes has no hyperparameters to optimize
-        
-    elif selected_model == 'KNN':
-        # Pipeline for K-Nearest Neighbors
-        pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             KNeighborsClassifier(n_jobs=-1))
-        # Search space
-        param_grid = {
-            'kneighborsclassifier__n_neighbors': Integer(2, 8),            # Number of neighbors
-            'kneighborsclassifier__weights': Categorical(['uniform', 'distance'])  # Weighting
-        }
-        
-    elif selected_model == 'GradientBoosting':
-        # Pipeline for Gradient Boosting
-        pipe = make_pipeline(StandardScaler(),
-                             VarianceThreshold(),
-                             GradientBoostingClassifier(random_state=random_state_value))
-        # Search space
-        param_grid = {
-            'gradientboostingclassifier__n_estimators': Integer(50, 1024),        # Number of trees
-            'gradientboostingclassifier__learning_rate': Real(1e-4, 0.1, prior='log-uniform'),  # Learning rate
-            'gradientboostingclassifier__max_depth': Integer(1, 10),              # Maximum depth
-            'gradientboostingclassifier__subsample': Real(0.5, 1.0),              # Sample fraction per tree
-            'gradientboostingclassifier__max_features': Categorical(['sqrt', 'log2', None])  # Features per tree
-        }
-    else:
-        raise ValueError(f"Model '{selected_model}' not recognized.")
-    
-    # ----------------------------------------------------------------------
-    # 4) FIT WITH BayesSearchCV (BAYESIAN OPTIMIZATION) ON TRAINING SET
-    # ----------------------------------------------------------------------
-    cv = StratifiedGroupKFold(n_splits=number_folds, shuffle=True, random_state=random_state_value)
-    
-    # Definir rutas de persistencia basadas en el directorio de salida dinámico
-    estimator_path = os.path.join(output_parent_dir, "best_estimator.pkl")
-    search_path = os.path.join(output_parent_dir, "search_results.pkl")
+    score_refit = "roc_auc"
+
+    estimator_path = os.path.join(args.outdir, "best_estimator.pkl")
+    search_path = os.path.join(args.outdir, "search_results.pkl")
 
     if os.path.exists(estimator_path) and os.path.exists(search_path):
-        print(f"\n>>> Modelo pre-entrenado encontrado en {output_parent_dir}. Cargando...")
+        print(f">>> Modelo pre-entrenado encontrado en {args.outdir}. Cargando...")
         best_estimator = joblib.load(estimator_path)
         search = joblib.load(search_path)
     else:
-        print("\n>>> No se encontró modelo previo. Iniciando optimización bayesiana...")
         search = BayesSearchCV(
             estimator=pipe,
             search_spaces=param_grid,
             scoring=score_group,
-            refit=score_refit_str,
-            cv=cv,
+            refit=score_refit,
+            cv=inner_cv,
             n_jobs=-1,
-            random_state=random_state_value
+            random_state=args.random_state,
+            return_train_score=False
         )
-        search.fit(X_train_full, y_train_full, groups=groups_train_full)
+        search.fit(X_train_final, y_train_full, groups=groups_train_full)
+
         best_estimator = search.best_estimator_
-        
-        # Guardar para futuras ejecuciones
         joblib.dump(best_estimator, estimator_path)
         joblib.dump(search, search_path)
-        print(f"  --> Modelo y resultados de búsqueda guardados en: {output_parent_dir}")
 
-    print(f"\nOptimization completed. Best parameters: {search.best_params_}")
+    print(f"[BayesSearchCV] Mejores parámetros: {search.best_params_}")
 
-
-
-    
-    # ----------------------------------------------------------------------
-    # 5) SAVE REPORT IN "report.txt"
-    # ----------------------------------------------------------------------
-    report_path = os.path.join(output_parent_dir, "report.txt")
-    with open(report_path, "w", encoding="utf-8") as f_out:
-        f_out.write(f"=== Fine-tuning of {selected_model} model ===\n\n")
-        f_out.write(f"Best parameters (according to {score_refit_str}): {search.best_params_}\n\n")
-        f_out.write("=== CV Results (BayesSearch) ===\n")
+    with open(report_path, "a", encoding="utf-8") as f_out:
+        f_out.write("=== BayesSearchCV results ===\n")
+        f_out.write(f"Best params: {search.best_params_}\n")
         idx_best = search.best_index_
         for key in score_group:
-            mean_test = search.cv_results_[f'mean_test_{key}'][idx_best]
-            std_test  = search.cv_results_[f'std_test_{key}'][idx_best]
-            f_out.write(f"  CV {key}: {mean_test:.3f} +/- {std_test:.3f}\n")
+            mean_test = search.cv_results_[f"mean_test_{key}"][idx_best]
+            std_test = search.cv_results_[f"std_test_{key}"][idx_best]
+            f_out.write(f"CV {key}: {mean_test:.3f} +/- {std_test:.3f}\n")
         f_out.write("\n")
-    
-    # ----------------------------------------------------------------------
-    # 6) EVALUATE ON TEST
-    # ----------------------------------------------------------------------
-    print("\n[Evaluation] Uncalibrated test set performance...")
-    y_pred_test = best_estimator.predict(X_test)
 
-    # Paths for confusion matrix (PNG + PDF)
-    confusion_fig  = os.path.join(output_parent_dir, "confusion_matrix.png")
-    confusion_fig2 = os.path.join(output_parent_dir, "confusion_matrix.pdf")
-
-    # Confusion matrix (uncalibrated)
-    fig, ax = plt.subplots(figsize=(6, 5))
-    ax.grid(False)
-    disp = ConfusionMatrixDisplay.from_estimator(
+    # ----------------------------------------------------------------------
+    # 6) CALIBRACIÓN Y THRESHOLD SOLO EN TRAIN (OOF)
+    # ----------------------------------------------------------------------
+    print("\n[Calibration] Obteniendo scores OOF en train...")
+    oof_scores = get_oof_scores(
         estimator=best_estimator,
-        X=X_test,
-        y=y_test,
-        ax=ax,
-        cmap="Blues",
-        colorbar=False
+        X=X_train_final,
+        y=y_train_full,
+        groups=groups_train_full,
+        cv=inner_cv
     )
-    n_classes = len(disp.display_labels)
-    
-    ax.set_xticks(np.arange(-0.5, n_classes, 1), minor=True)
-    ax.set_yticks(np.arange(-0.5, n_classes, 1), minor=True)
-    ax.grid(which='minor', color='black', linestyle='--', linewidth=1)
-    ax.tick_params(which='minor', bottom=False, left=False)
-    plt.tight_layout()
-    plt.savefig(confusion_fig, dpi=dpi, bbox_inches='tight')
-    plt.savefig(confusion_fig2, dpi=dpi, bbox_inches='tight')
-    print(f"Confusion matrix saved at: {confusion_fig} and {confusion_fig2}")
-    plt.close()
-    print(f"Confusion matrix saved at: {confusion_fig}")
-    
-    # Calculate performance metrics on test
-    if hasattr(best_estimator, "predict_proba"):
-        auc_ = roc_auc_score(y_test, best_estimator.predict_proba(X_test)[:, 1])
-    elif hasattr(best_estimator, "decision_function"):
-        auc_ = roc_auc_score(y_test, best_estimator.decision_function(X_test))
-    else:
-        auc_ = np.nan
-    
-    # General classification metrics
-    mcc_    = matthews_corrcoef(y_test, y_pred_test)
-    kappa_  = cohen_kappa_score(y_test, y_pred_test)
-    f1_     = f1_score(y_test, y_pred_test)
-    acc_    = accuracy_score(y_test, y_pred_test)
-    sens_   = recall_score(y_test, y_pred_test, pos_label=1)
-    spec_   = recall_score(y_test, y_pred_test, pos_label=0)
-    ppv_    = precision_score(y_test, y_pred_test, pos_label=1)
-    npv_    = precision_score(y_test, y_pred_test, pos_label=0)
-    balacc_ = balanced_accuracy_score(y_test, y_pred_test)
-    
-    # Detailed classification report
-    report_cr = classification_report(y_test, y_pred_test)
-    
+
+    # Platt scaling SOLO en train
+    platt_model = fit_platt_scaler(oof_scores, y_train_full, random_state=args.random_state)
+    joblib.dump(platt_model, os.path.join(args.outdir, "platt_scaler.pkl"))
+
+    oof_probs_cal = apply_platt_scaler(platt_model, oof_scores)
+
+    # Threshold SOLO con train OOF calibrado
+    best_thresh, best_thr_score, df_thr = find_best_threshold_from_train_probs(
+        y_train=y_train_full,
+        prob_train=oof_probs_cal,
+        metric=args.threshold_metric
+    )
+
+    df_thr.to_csv(os.path.join(args.outdir, "threshold_search_train.csv"), index=False)
+
     with open(report_path, "a", encoding="utf-8") as f_out:
-        f_out.write("=== Test Evaluation (NOT calibrated) ===\n")
-        f_out.write(f"  Confusion Matrix Figure: {confusion_fig}\n")
-        f_out.write(f"  AUC: {auc_:.3f}\n")
-        f_out.write(f"  MCC: {mcc_:.3f}\n")
-        f_out.write(f"  Kappa: {kappa_:.3f}\n")
-        f_out.write(f"  F1: {f1_:.3f}\n")
-        f_out.write(f"  Accuracy: {acc_:.3f}\n")
-        f_out.write(f"  Sensitivity: {sens_:.3f}\n")
-        f_out.write(f"  Specificity: {spec_:.3f}\n")
-        f_out.write(f"  PPV: {ppv_:.3f}\n")
-        f_out.write(f"  NPV: {npv_:.3f}\n")
-        f_out.write(f"  Balanced Accuracy: {balacc_:.3f}\n\n")
-        f_out.write("=== Classification Report ===\n")
-        f_out.write(report_cr)
+        f_out.write("=== Threshold selection (TRAIN OOF ONLY) ===\n")
+        f_out.write(f"Metric used: {args.threshold_metric}\n")
+        f_out.write(f"Best threshold: {best_thresh:.3f}\n")
+        f_out.write(f"Best train score: {best_thr_score:.3f}\n\n")
+
+    # ----------------------------------------------------------------------
+    # 7) REFIT FINAL EN TODO TRAIN
+    # ----------------------------------------------------------------------
+    print("\n[Refit] Ajustando estimador final en TODO el train...")
+    best_estimator.fit(X_train_final, y_train_full)
+    raw_train = get_raw_scores(best_estimator, X_train_final)
+    raw_test = get_raw_scores(best_estimator, X_test_final)
+
+    prob_train_pre = get_probability_like(best_estimator, X_train_final)
+    prob_test_pre = get_probability_like(best_estimator, X_test_final)
+
+    prob_train_post = apply_platt_scaler(platt_model, raw_train)
+    prob_test_post = apply_platt_scaler(platt_model, raw_test)
+
+    y_pred_test_default = (prob_test_post >= 0.5).astype(int)
+    y_pred_test_best = (prob_test_post >= best_thresh).astype(int)
+
+    # ----------------------------------------------------------------------
+    # 8) EVALUACIÓN FINAL EN TEST
+    # ----------------------------------------------------------------------
+    print("\n[Test] Evaluación final en test...")
+    metrics_default = compute_metrics(y_test, y_pred_test_default, prob_test_post)
+    metrics_best = compute_metrics(y_test, y_pred_test_best, prob_test_post)
+
+    report_default = classification_report(y_test, y_pred_test_default)
+    report_best = classification_report(y_test, y_pred_test_best)
+
+    # Guardar predicciones
+    df_test_preds = pd.DataFrame({
+        "y_true": y_test,
+        "prob_pre": prob_test_pre,
+        "prob_post": prob_test_post,
+        "pred_default_0_5": y_pred_test_default,
+        "pred_best_threshold": y_pred_test_best
+    })
+    df_test_preds.to_csv(os.path.join(args.outdir, "test_predictions.csv"), index=False)
+
+    with open(report_path, "a", encoding="utf-8") as f_out:
+        f_out.write("=== Final test evaluation ===\n")
+        f_out.write("(Probabilities calibrated with Platt scaling fit on TRAIN OOF scores)\n\n")
+
+        f_out.write("[Threshold = 0.50]\n")
+        for k, v in metrics_default.items():
+            f_out.write(f"{k}: {v:.3f}\n")
+        f_out.write("\nClassification report:\n")
+        f_out.write(report_default)
         f_out.write("\n\n")
-    
-    # --- Calibrate with Platt scaling (sigmoid, cv=5) ---
-    print("\nCalibrating model with Platt scaling (sigmoid, cv=5)...")
-    cal_clf = CalibratedClassifierCV(best_estimator, method="sigmoid", cv=5)
-    cal_clf.fit(X_train_full, y_train_full)
-    
-    # --- Calibration curve PRE (before calibrating) ---
-    calibration_fig_pre = os.path.join(calibration_dir, "calibration_pre.png")
-    fig, ax = plt.subplots(figsize=(8, 6))
-    CalibrationDisplay.from_estimator(
-        best_estimator, 
-        X_test, 
-        y_test, 
-        n_bins=10, 
-        name=f"{selected_model}_pre", 
-        ax=ax
-    )
 
-    for line in ax.get_lines():
-        line.set_color("black")
+        f_out.write(f"[Threshold = best train threshold = {best_thresh:.3f}]\n")
+        for k, v in metrics_best.items():
+            f_out.write(f"{k}: {v:.3f}\n")
+        f_out.write("\nClassification report:\n")
+        f_out.write(report_best)
+        f_out.write("\n\n")
 
-    legend = ax.get_legend()
-    if legend:
-        for text in legend.get_texts():
-            text.set_color("black")
-        for line in legend.get_lines():
-            line.set_color("black")
-        for patch in legend.get_patches():
-            patch.set_edgecolor("black")
-            patch.set_facecolor("black")
-            
-    # ax.set_title(f"Calibration Curve (pre), {selected_model}", fontsize=14)
-    plt.savefig(calibration_fig_pre, dpi=dpi, bbox_inches='tight')
-    plt.close()
-    print(f"  --> Calibration curve (pre) saved at: {calibration_fig_pre}")
-    
-    # --- Calibration curve POST (after calibrating) ---
-    calibration_fig_post = os.path.join(calibration_dir, "calibration_post.png")
-    fig, ax = plt.subplots(figsize=(8, 6))
-    CalibrationDisplay.from_estimator(
-        cal_clf, 
-        X_test, 
-        y_test, 
-        n_bins=10, 
-        name=f"{selected_model}_post", 
-        ax=ax
-    )
-    # ax.set_title(f"Calibration Curve (post), {selected_model}", fontsize=14)
+    # ----------------------------------------------------------------------
+    # 9) MATRICES DE CONFUSIÓN
+    # ----------------------------------------------------------------------
+    cm_default = confusion_matrix(y_test, y_pred_test_default)
+    cm_best = confusion_matrix(y_test, y_pred_test_best)
 
-    for line in ax.get_lines():
-        line.set_color("black")
-
-    legend = ax.get_legend()
-    if legend:
-        for text in legend.get_texts():
-            text.set_color("black")
-        for line in legend.get_lines():
-            line.set_color("black")
-        for patch in legend.get_patches():
-            patch.set_edgecolor("black")
-            patch.set_facecolor("black")
-            
-    plt.savefig(calibration_fig_post, dpi=dpi, bbox_inches='tight')
-    plt.close()
-    print(f"  --> Calibration curve (post) saved at: {calibration_fig_post}")
-
-    # Calibration metrics 
-    def calibration_error(y_true, y_prob, n_bins=10, norm='l1'):
-        y_true = np.asarray(y_true, dtype=np.float64)
-        y_prob = np.asarray(y_prob, dtype=np.float64)
-
-        if norm not in {"l1", "l2"}:
-            raise ValueError("norm must be 'l1' or 'l2'")
-
-        # 1. Assign each probability to a bin
-        bins = np.linspace(0.0, 1.0, n_bins + 1)
-        bin_ids = np.digitize(y_prob, bins, right=True) - 1
-        bin_ids = np.clip(bin_ids, 0, n_bins - 1)      
-
-        # 2. Sum weighted error by bin size
-        ece = 0.0
-        N = len(y_true)
-        for i in range(n_bins):
-            idx = bin_ids == i
-            if idx.any():
-                prob_avg = y_prob[idx].mean()
-                acc_avg  = y_true[idx].mean()
-                err_bin  = abs(prob_avg - acc_avg) if norm == "l1" else (prob_avg - acc_avg) ** 2
-                ece     += err_bin * idx.sum() / N
-
-        return ece
-
-    # 1) Probabilities (without / with Platt)
-    p_pre  = best_estimator.predict_proba(X_test)[:, 1]
-    p_post = cal_clf.predict_proba(X_test)[:, 1]
-
-    # 2) Expected Calibration Error (ECE)
-    ece_pre  = calibration_error(y_test, p_pre,  n_bins=10, norm='l1')
-    ece_post = calibration_error(y_test, p_post, n_bins=10, norm='l1')
-
-    # 3) Brier score
-    brier_pre  = brier_score_loss(y_test, p_pre)
-    brier_post = brier_score_loss(y_test, p_post)
-
-    # 4) Write results to report
-    with open(report_path, "a", encoding="utf-8") as f_out:
-        f_out.write("=== Calibration metrics ===\n")
-        f_out.write(f"  ECE  (pre):  {ece_pre:.3f}\n")
-        f_out.write(f"  ECE  (post): {ece_post:.3f}\n")
-        f_out.write(f"  Brier (pre): {brier_pre:.3f}\n")
-        f_out.write(f"  Brier (post): {brier_post:.3f}\n\n")
-
-    # --- Threshold adjustment to optimize F1 ---
-    thresholds = np.linspace(0.1, 0.9, 9)
-    best_thresh = None
-    best_f1 = -np.inf
-    results = []
-    
-    # Find optimal threshold for F1
-    for thresh in thresholds:
-        y_pred_thresh = (cal_clf.predict_proba(X_test)[:, 1] >= thresh).astype(int)
-        f1_val = f1_score(y_test, y_pred_thresh)
-        results.append({'threshold': thresh, 'f1': f1_val})
-        if f1_val > best_f1:
-            best_f1 = f1_val
-            best_thresh = thresh
-    
-    # Generate predictions with optimal threshold
-    y_pred_best = (cal_clf.predict_proba(X_test)[:, 1] >= best_thresh).astype(int)
-    
-    # Calculate metrics with optimized threshold
-    auc_best    = roc_auc_score(y_test, cal_clf.predict_proba(X_test)[:, 1])
-    mcc_best    = matthews_corrcoef(y_test, y_pred_best)
-    kappa_best  = cohen_kappa_score(y_test, y_pred_best)
-    f1_best     = f1_score(y_test, y_pred_best)
-    acc_best    = accuracy_score(y_test, y_pred_best)
-    sens_best   = recall_score(y_test, y_pred_best, pos_label=1)
-    spec_best   = recall_score(y_test, y_pred_best, pos_label=0)
-    ppv_best    = precision_score(y_test, y_pred_best, pos_label=1)
-    npv_best    = precision_score(y_test, y_pred_best, pos_label=0)
-    balacc_best = balanced_accuracy_score(y_test, y_pred_best)
-    
-    report_cr_best = classification_report(y_test, y_pred_best)
-
-    # Save calibration and threshold adjustment results
-    with open(report_path, "a", encoding="utf-8") as f_out:
-        f_out.write("=== Threshold Adjustment (Results with best threshold) ===\n")
-        f_out.write("Results for each threshold:\n")
-        for r in results:
-            f_out.write("Threshold: {:.2f} - F1: {:.3f}\n".format(r['threshold'], r['f1']))
-        f_out.write(f"\nBest threshold selected (according to F1): {best_thresh:.2f}\n")
-        f_out.write("\nClassification Report (with threshold {:.2f}):\n".format(best_thresh))
-        f_out.write(report_cr_best)
-        f_out.write("\n")
-        f_out.write(f"AUC: {auc_best:.3f}\n")
-        f_out.write(f"MCC: {mcc_best:.3f}\n")
-        f_out.write(f"Kappa: {kappa_best:.3f}\n")
-        f_out.write(f"F1: {f1_best:.3f}\n")
-        f_out.write(f"Accuracy: {acc_best:.3f}\n")
-        f_out.write(f"Sensitivity: {sens_best:.3f}\n")
-        f_out.write(f"Specificity: {spec_best:.3f}\n")
-        f_out.write(f"PPV: {ppv_best:.3f}\n")
-        f_out.write(f"NPV: {npv_best:.3f}\n")
-        f_out.write(f"Balanced Accuracy: {balacc_best:.3f}\n\n")
-    
-    # --- Calibrated confusion matrix ---
-    conf_matrix_best = confusion_matrix(y_test, y_pred_best)
-    confusion_fig_best = os.path.join(calibration_dir, "confusion_matrix_best_threshold.png")
     fig, ax = plt.subplots(figsize=(6, 5))
     ax.grid(False)
-    
-    disp_best = ConfusionMatrixDisplay(confusion_matrix=conf_matrix_best)
-    disp_best.plot(ax=ax, cmap='cividis')
-    # ax.set_title(f"{selected_model} (Calibrated, threshold={best_thresh:.2f})", fontsize=12)
-    
-    n_classes = conf_matrix_best.shape[0]
-    
-    ax.set_xticks(np.arange(-0.5, n_classes, 1), minor=True)
-    ax.set_yticks(np.arange(-0.5, n_classes, 1), minor=True)
-    
-    ax.grid(which='minor', color='black', linestyle='--', linewidth=1)
-    ax.tick_params(which='minor', bottom=False, left=False)
-    
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm_default)
+    disp.plot(ax=ax, cmap="Blues", colorbar=False)
+    ax.set_title("Test confusion matrix (threshold = 0.50)")
     plt.tight_layout()
-    plt.savefig(confusion_fig_best, dpi=dpi, bbox_inches='tight')
+    save_plot_both_formats(os.path.join(args.outdir, "confusion_matrix_test_default"), dpi=dpi)
     plt.close()
-    
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.grid(False)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm_best)
+    disp.plot(ax=ax, cmap="cividis", colorbar=False)
+    ax.set_title(f"Test confusion matrix (threshold = {best_thresh:.2f})")
+    plt.tight_layout()
+    save_plot_both_formats(os.path.join(calibration_dir, "confusion_matrix_test_best_threshold"), dpi=dpi)
+    plt.close()
+
+    # ----------------------------------------------------------------------
+    # 10) CURVAS DE CALIBRACIÓN + MÉTRICAS DE CALIBRACIÓN
+    # ----------------------------------------------------------------------
+    print("\n[Calibration] Curvas y métricas...")
+
+    # Curva pre
+    fig, ax = plt.subplots(figsize=(8, 6))
+    CalibrationDisplay.from_predictions(
+        y_true=y_test,
+        y_prob=prob_test_pre,
+        n_bins=10,
+        name=f"{args.model}_pre",
+        ax=ax
+    )
+    ax.set_title("Calibration curve (pre)")
+    plt.tight_layout()
+    save_plot_both_formats(os.path.join(calibration_dir, "calibration_pre"), dpi=dpi)
+    plt.close()
+
+    # Curva post
+    fig, ax = plt.subplots(figsize=(8, 6))
+    CalibrationDisplay.from_predictions(
+        y_true=y_test,
+        y_prob=prob_test_post,
+        n_bins=10,
+        name=f"{args.model}_post",
+        ax=ax
+    )
+    ax.set_title("Calibration curve (post)")
+    plt.tight_layout()
+    save_plot_both_formats(os.path.join(calibration_dir, "calibration_post"), dpi=dpi)
+    plt.close()
+
+    ece_pre = calibration_error(y_test, prob_test_pre, n_bins=10, norm="l1")
+    ece_post = calibration_error(y_test, prob_test_post, n_bins=10, norm="l1")
+    brier_pre = brier_score_loss(y_test, prob_test_pre)
+    brier_post = brier_score_loss(y_test, prob_test_post)
+
     with open(report_path, "a", encoding="utf-8") as f_out:
-        f_out.write(f"Confusion Matrix (Calibrated with threshold={best_thresh:.2f}) fig: {confusion_fig_best}\n\n")
-        
+        f_out.write("=== Calibration metrics (TEST) ===\n")
+        f_out.write(f"ECE pre:  {ece_pre:.3f}\n")
+        f_out.write(f"ECE post: {ece_post:.3f}\n")
+        f_out.write(f"Brier pre:  {brier_pre:.3f}\n")
+        f_out.write(f"Brier post: {brier_post:.3f}\n\n")
 
     # ----------------------------------------------------------------------
-    # 7) INTERPRETABILITY
+    # 11) SHAP SOBRE MODELO FINAL
     # ----------------------------------------------------------------------
+    print("\n[SHAP] Interpretabilidad del modelo final...")
 
-    # Extract the preprocessor (all steps except final classifier)
     preprocessor = deepcopy(best_estimator)
     preprocessor.steps.pop(-1)
-
-    # Extract the final classifier
     model_clf = best_estimator.steps[-1][1]
 
-    # Perform SHAP analysis for training set
-    train_success, selected_features, train_shap_values, train_top_features = perform_shap_analysis(
-        X_data=X_train_full,
+    train_success, selected_features_shap_train, train_shap_values, train_top_feats = perform_shap_analysis(
+        X_data=X_train_final,
         y_data=y_train_full,
         model_clf=model_clf,
         preprocessor=preprocessor,
         shap_dir=train_shap_dir,
         report_path=report_path,
-        dataset_name="training"
+        dataset_name="train"
     )
 
-    # Perform SHAP analysis for test set
-    test_success, _, test_shap_values, test_top_features = perform_shap_analysis(
-        X_data=X_test,
+    test_success, selected_features_shap_test, test_shap_values, test_top_feats = perform_shap_analysis(
+        X_data=X_test_final,
         y_data=y_test,
         model_clf=model_clf,
         preprocessor=preprocessor,
@@ -847,7 +1068,20 @@ def main():
         dataset_name="test"
     )
 
-    print(f"\nProcess completed. Report saved at: {report_path}")
+    with open(report_path, "a", encoding="utf-8") as f_out:
+        f_out.write("=== SHAP summary ===\n")
+        f_out.write(f"Train SHAP success: {train_success}\n")
+        f_out.write(f"Test SHAP success: {test_success}\n")
+        if train_top_feats is not None:
+            f_out.write(f"Top train SHAP features: {train_top_feats}\n")
+        if test_top_feats is not None:
+            f_out.write(f"Top test SHAP features: {test_top_feats}\n")
+        f_out.write("\n")
+
+    print("\n=== FIN SCRIPT 3 CORREGIDO ===")
+    print(f"Reporte guardado en: {report_path}")
+
 
 if __name__ == "__main__":
+    warnings.filterwarnings("ignore", category=UserWarning)
     main()
