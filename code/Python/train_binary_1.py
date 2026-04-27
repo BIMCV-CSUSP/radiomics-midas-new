@@ -924,7 +924,7 @@ if __name__ == "__main__":
 
         postprocess_cmd = [
             "python3",
-            os.path.join(script_dir, "../2_model_differences.py"),
+            os.path.join(script_dir, "2_model_differences.py"),
             "--csv_preds", preds_filepath,
             "--csv_results", results_filepath,
             "--metric", "val_auc",
